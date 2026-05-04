@@ -18,15 +18,20 @@
 
     <main class="character-main">
       <header class="character-title">
+        <div class="title-icon-area">
+          <div class="icon-preview">アイコン画像</div>
+          <button>設定</button>
+        </div>
+
         <div class="title-stack">
           <label>
-            キャラクターID
+            <span class="form-label">キャラクターID</span>
             <input id="characterIdInput" type="text">
             <span>リストの表示順や処理で使用します。</span>
           </label>
 
           <label>
-            キャラクター名
+            <span class="form-label">キャラクター名</span>
             <input id="characterNameInput" type="text">
             <span>ここの名前でチャットを行います。</span>
           </label>
@@ -41,23 +46,12 @@
       </header>
 
       <section class="character-grid">
-
-        <div class="image-column">
-          <div class="image-box">
-            <div class="box-header">
-              <span>アイコン</span>
-              <button>設定</button>
-            </div>
-            <div class="icon-preview">アイコン画像</div>
+        <div class="image-box standee-box">
+          <div class="box-header">
+            <span>立ち絵</span>
+            <button>設定</button>
           </div>
-
-          <div class="image-box">
-            <div class="box-header">
-              <span>立ち絵</span>
-              <button>設定</button>
-            </div>
-            <div class="standee-preview">立ち絵画像</div>
-          </div>
+          <div class="standee-preview">立ち絵画像</div>
         </div>
 
         <div class="settings-box">
