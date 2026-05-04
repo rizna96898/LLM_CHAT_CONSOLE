@@ -1,6 +1,6 @@
 const STORAGE_KEY = "base_path";
 const FLASK_BASE_URL = "http://127.0.0.1:5000";
-
+const settingsTitle = document.getElementById("settingsTitle");
 const basePathInput = document.getElementById("basePathInput");
 const selectBasePathButton = document.getElementById("selectBasePathButton");
 const healthCheckButton = document.getElementById("healthCheckButton");
@@ -151,14 +151,23 @@ loadModelButton.addEventListener("click", async () => {
 
 applyButton.addEventListener("click", () => {
   const value = basePathInput.value.trim();
-  localStorage.setItem("base_path", value);
+  localStorage.setItem(STORAGE_KEY, value);
 
-  const title = document.getElementById("settingsTitle");
-  title.textContent = "設定（適用しました）";
+  // 親の「設定」ラベルを取得
+  const parentDoc = window.parent.document;
+  const title = parentDoc.querySelector(".settings-title"); // ←クラスは実際に合わせる
 
-  setTimeout(() => {
-    title.textContent = "設定";
-  }, 2000);
+  if (title) {
+    const original = title.textContent;
+
+    title.textContent = "設定　適用しました。";
+    title.style.color = "#0f7a2f";
+
+    setTimeout(() => {
+      title.textContent = original;
+      title.style.color = "";
+    }, 2000);
+  }
 });
 
 basePathInput.value = localStorage.getItem("local_llm_console_base_path") || "";
