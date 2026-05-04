@@ -153,13 +153,11 @@ applyButton.addEventListener("click", () => {
   const value = basePathInput.value.trim();
   localStorage.setItem(STORAGE_KEY, value);
 
-  // 親の「設定」ラベルを取得
   const parentDoc = window.parent.document;
-  const title = parentDoc.querySelector(".settings-title"); // ←クラスは実際に合わせる
+  const title = parentDoc.querySelector("#settingsOverlay .settings-overlay-header strong");
 
   if (title) {
     const original = title.textContent;
-
     title.textContent = "設定　適用しました。";
     title.style.color = "#0f7a2f";
 
@@ -169,5 +167,3 @@ applyButton.addEventListener("click", () => {
     }, 2000);
   }
 });
-
-basePathInput.value = localStorage.getItem("local_llm_console_base_path") || "";
