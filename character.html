@@ -19,8 +19,12 @@
     <main class="character-main">
       <header class="character-title">
         <div class="title-icon-area">
-          <div class="icon-preview">アイコン画像</div>
-          <button>設定</button>
+          <div class="icon-preview" id="iconPreview">
+            <span class="placeholder">アイコン画像</span>
+            <img id="iconImg">
+          </div>
+          <button type="button" id="iconSelectButton">設定</button>
+          <input type="file" id="iconFileInput" accept="image/*" hidden>
         </div>
 
         <div class="title-stack">
@@ -49,9 +53,13 @@
         <div class="image-box standee-box">
           <div class="box-header">
             <span>立ち絵</span>
-            <button>設定</button>
+            <button type="button" id="standingSelectButton">設定</button>
+            <input type="file" id="standingFileInput" accept="image/*" hidden>
           </div>
-          <div class="standee-preview">立ち絵画像</div>
+          <div class="standee-preview" id="standingPreview">
+            <span class="placeholder">立ち絵画像</span>
+            <img id="standingImg">
+          </div>
         </div>
 
         <div class="settings-box">
@@ -170,6 +178,19 @@
       }
     }
 
+    const iconSelectButton = document.getElementById('iconSelectButton');
+    const iconFileInput = document.getElementById('iconFileInput');
+
+    const standingSelectButton = document.getElementById('standingSelectButton');
+    const standingFileInput = document.getElementById('standingFileInput');
+
+    iconSelectButton.addEventListener('click', () => {
+      iconFileInput.click();
+    });
+
+    standingSelectButton.addEventListener('click', () => {
+      standingFileInput.click();
+    });
     document.getElementById("addCharacterButton").addEventListener("click", () => {
       const newChar = createNewCharacter();
       newChar.id = createUniqueId(newChar.id);
@@ -217,8 +238,32 @@
       renderEditor(nextChar ?? createNewCharacter());
     });
 
-    document.getElementById("initializeButton").addEventListener("click", () => {
-      characterSettingInput.value = "";
+    document.getElementById("initializeButton").addEventListener("click", async () => {
+      try {
+        const baseChatPath = localStorage.getItem("base_chat_path") || "";
+
+        const res = await fetch("http://127.0.0.1:5000/settings/get_character_template_yaml", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            base_chat_path: baseChatPath
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          alert(data.message || "テンプレ取得失敗");
+          return;
+        }
+
+        characterSettingInput.value = data.content;
+
+      } catch (e) {
+        alert("サーバー接続エラー");
+      }
     });
 
     document.getElementById("tagClearButton").addEventListener("click", () => {
@@ -241,6 +286,41 @@
     }
 
     renderCharacterList();
+
+    const iconInput = document.getElementById('iconFileInput');
+    const iconPreview = document.getElementById('iconPreview');
+
+    const standingInput = document.getElementById('standingFileInput');
+    const standingPreview = document.getElementById('standingPreview');
+
+    // アイコン
+    const iconImg = document.getElementById('iconImg');
+    const iconPlaceholder = document.querySelector('#iconPreview .placeholder');
+
+    iconInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      iconImg.src = URL.createObjectURL(file);
+      iconImg.style.display = "block";
+      iconPlaceholder.style.display = "none";
+
+      e.target.value = '';
+    });
+
+    const standingImg = document.getElementById('standingImg');
+    const standingPlaceholder = document.querySelector('#standingPreview .placeholder');
+
+    standingInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      standingImg.src = URL.createObjectURL(file);
+      standingImg.style.display = "block";
+      standingPlaceholder.style.display = "none";
+
+      e.target.value = '';
+    });
   </script>
 </body>
 </html>

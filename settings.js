@@ -1,13 +1,16 @@
 const STORAGE_KEY = "base_path";
+const BASE_CHAT_PATH_KEY = "base_chat_path";
 const FLASK_BASE_URL = "http://127.0.0.1:5000";
 const settingsTitle = document.getElementById("settingsTitle");
 const basePathInput = document.getElementById("basePathInput");
+const baseChatPathInput = document.getElementById("baseChatPathInput");
 const selectBasePathButton = document.getElementById("selectBasePathButton");
 const healthCheckButton = document.getElementById("healthCheckButton");
 const openSystemYamlButton = document.getElementById("openSystemYamlButton");
 const loadModelButton = document.getElementById("loadModelButton");
 const applyButton = document.getElementById("applyButton");
-
+const selectBaseChatPathButton = document.getElementById("selectBaseChatPathButton");
+const baseChatPathMessage = document.getElementById("baseChatPathMessage");
 const basePathMessage = document.getElementById("basePathMessage");
 const healthMessage = document.getElementById("healthMessage");
 const systemYamlMessage = document.getElementById("systemYamlMessage");
@@ -20,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (saved) {
     basePathInput.value = saved;
   }
+  baseChatPathInput.value = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
 });
 
 function setMessage(element, text, type = "") {
@@ -100,6 +104,26 @@ selectBasePathButton.addEventListener("click", async () => {
     setMessage(basePathMessage, SERVER_DOWN_MESSAGE, "error");
   }
 });
+selectBaseChatPathButton.addEventListener("click", async () => {
+  setMessage(baseChatPathMessage, "フォルダ選択待ち...", "info");
+
+  try {
+    const data = await requestJson("/settings/select_base_path", {
+      method: "POST",
+      body: JSON.stringify({ current_path: baseChatPathInput.value || "" }),
+    });
+
+    if (data.base_path) {
+      baseChatPathInput.value = data.base_path;
+      setMessage(baseChatPathMessage, "ベースチャットパスを設定しました。", "success");
+    } else {
+      setMessage(baseChatPathMessage, "フォルダ選択がキャンセルされました。", "info");
+    }
+  } catch (_) {
+    handleServerDown();
+    setMessage(baseChatPathMessage, SERVER_DOWN_MESSAGE, "error");
+  }
+});
 
 openSystemYamlButton.addEventListener("click", async () => {
   setMessage(systemYamlMessage, "SystemSettingsYamlを開いています...", "info");
@@ -152,7 +176,10 @@ loadModelButton.addEventListener("click", async () => {
 applyButton.addEventListener("click", () => {
   const value = basePathInput.value.trim();
   localStorage.setItem(STORAGE_KEY, value);
-
+  localStorage.setItem(
+    BASE_CHAT_PATH_KEY,
+    baseChatPathInput.value.trim()
+  );
   window.parent.postMessage({
     type: "settings_applied",
     message: "設定　適用しました。"

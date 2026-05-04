@@ -17,17 +17,31 @@
         </div>
       </section>
       <section class="settings-row base-path-row">
-        <label class="field">
-          <span>ベースパス</span>
-          <input id="basePathInput" type="text" placeholder="例）C:¥LocalFlaskServer" />
-        </label>
-        <button id="selectBasePathButton" type="button">エクスプローラー</button>
-      </section>
+        <div class="setting-block">
+          <label class="setting-label">ベースチャットパス</label>
+          <div class="path-row">
+            <input id="baseChatPathInput" type="text">
+            <button id="selectBaseChatPathButton" type="button">エクスプローラー</button>
+          </div>
+          <p class="setting-help">
+            LLM_CHAT_CONSOLE を置いたパス文字列を指定してください。<br>
+            例） E:¥LLM_CHAT_CONSOLE
+          </p>
+          <p id="baseChatPathMessage" class="status-message"></p>
+        </div>
 
-      <section class="help-block">
-        <p>ベースパスとは、LOCAL_FLASK_SERVERを置いたパス文字列を指定してください。</p>
-        <p>例）C:¥LocalFlaskServer</p>
-        <p id="basePathMessage" class="status-message"></p>
+        <div class="setting-block">
+          <label class="setting-label">ベースパス</label>
+          <div class="path-row">
+            <input id="basePathInput" type="text" placeholder="例）C:¥LocalFlaskServer">
+            <button id="selectBasePathButton" type="button">エクスプローラー</button>
+          </div>
+          <p class="setting-help">
+            LOCAL_FLASK_SERVERを置いたパス文字列を指定してください。<br>
+            例） C:¥LocalFlaskServer
+          </p>
+          <p id="basePathMessage" class="status-message"></p>
+        </div>
       </section>
 
       <section class="settings-actions">

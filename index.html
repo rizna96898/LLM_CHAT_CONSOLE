@@ -960,6 +960,12 @@
     const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
     const openSettingsWindow = document.getElementById('openSettingsWindow');
 
+    const characterFrame = document.querySelector('.character-frame');
+    function reloadCharacterFrame() {
+      if (!characterFrame) return;
+      characterFrame.src = `character.html?reload=${Date.now()}`;
+    }
+
     function setTopCollapsed(collapsed) {
       topbar.classList.toggle('collapsed', collapsed);
       topbar.classList.remove('menu-open');
@@ -1062,6 +1068,7 @@
     });
 
     characterToggleButton.addEventListener('click', () => {
+      reloadCharacterFrame();
       setCharacterOpen(characterOverlay.classList.contains('hidden'));
     });
 

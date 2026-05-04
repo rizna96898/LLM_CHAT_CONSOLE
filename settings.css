@@ -66,9 +66,9 @@ input {
 
 .settings-row {
   display: flex;
-  align-items: end;
-  flex-wrap: wrap;
-  gap: 14px;
+  flex-direction: column;  /* ←これ追加 */
+  align-items: stretch;    /* ←これも変更 */
+  gap: 8px;
   margin-bottom: 12px;
 }
 
