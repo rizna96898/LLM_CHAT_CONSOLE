@@ -7,6 +7,8 @@
   --panel: #ffffff;
   --panel-soft: #f7f8fb;
   --accent: #4f7cff;
+  --success: #16803a;
+  --error: #d93025;
 }
 
 * {
@@ -32,6 +34,12 @@ button {
   background: #fff;
   cursor: pointer;
   padding: 3px 12px;
+}
+
+button:disabled {
+  color: #9aa4b2;
+  background: #edf1f5;
+  cursor: not-allowed;
 }
 
 input {
@@ -72,12 +80,13 @@ input {
 }
 
 .field input {
-  width: 260px;
+  width: 420px;
+  max-width: calc(100vw - 220px);
   font-weight: 400;
 }
 
 .help-block {
-  margin: 0 0 24px;
+  margin: 0 0 28px;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -89,18 +98,36 @@ input {
 .settings-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
+  max-width: 900px;
 }
 
-.action-row {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 10px;
-  align-items: center;
+.action-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
-.settings-actions p {
+.action-block p {
   margin: 0;
+}
+
+.status-message {
+  min-height: 1.4em;
+  font-size: 13px;
+}
+
+.status-message.success {
+  color: var(--success);
+}
+
+.status-message.error {
+  color: var(--error);
+}
+
+.status-message.info {
+  color: var(--muted);
 }
 
 .settings-footer {
@@ -119,12 +146,9 @@ input {
     padding: 18px;
   }
 
-  .settings-actions {
-    grid-template-columns: 1fr;
-  }
-
   .field input {
     width: min(100%, 420px);
+    max-width: 100%;
   }
 
   .settings-footer {

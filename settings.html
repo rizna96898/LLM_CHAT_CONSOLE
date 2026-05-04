@@ -8,40 +8,48 @@
 </head>
 <body>
   <div class="settings-page">
-
     <main class="settings-main">
+      <section class="settings-actions">
+        <div class="action-block">
+          <button id="healthCheckButton" type="button">サーバー起動確認</button>
+          <p>接続状態を確認します。ローカルフラスクサーバーは個人で起動してから押下してください。</p>
+          <p id="healthMessage" class="status-message"></p>
+        </div>
+      </section>
       <section class="settings-row base-path-row">
         <label class="field">
           <span>ベースパス</span>
-          <input type="text" value="" placeholder="例）C:\LocalFlaskServer" />
+          <input id="basePathInput" type="text" placeholder="例）C:¥LocalFlaskServer" />
         </label>
-        <button type="button">エクスプローラー</button>
+        <button id="selectBasePathButton" type="button">エクスプローラー</button>
       </section>
 
       <section class="help-block">
         <p>ベースパスとは、LOCAL_FLASK_SERVERを置いたパス文字列を指定してください。</p>
         <p>例）C:¥LocalFlaskServer</p>
+        <p id="basePathMessage" class="status-message"></p>
       </section>
 
       <section class="settings-actions">
         <div class="action-block">
-          <button>サーバー起動確認</button>
-          <p>接続状態を確認します。ローカルフラスクサーバーは個人で起動してから押下してください。</p>
-        </div>
-        <div class="action-block">
-          <button>SystemSettingsYamlを編集</button>
+          <button id="openSystemYamlButton" type="button">SystemSettingsYamlを編集</button>
           <p>使用するモデル、初期設定を記述してるyamlファイルを開きます。</p>
+          <p id="systemYamlMessage" class="status-message"></p>
         </div>
+
         <div class="action-block">
-          <button>モデルロード</button>
+          <button id="loadModelButton" type="button">モデルロード</button>
           <p>モデルを読み込みます。サーバ起動確認が済まないと失敗します。</p>
+          <p id="modelLoadMessage" class="status-message"></p>
         </div>
       </section>
 
       <footer class="settings-footer">
-        <button type="button">適用</button>
+        <button id="applyButton" type="button">適用</button>
       </footer>
     </main>
   </div>
+
+  <script src="settings.js"></script>
 </body>
 </html>
