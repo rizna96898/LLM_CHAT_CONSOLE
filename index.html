@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ローカルLLM チャット上物モック</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --panel: #ffffff;
+      --panel-soft: #f7f8fb;
+      --line: #cfd6df;
+      --text: #20242a;
+      --muted: #66707c;
+      --accent: #4f7cff;
+      --danger: #d94a4a;
+      --shadow: 0 8px 24px rgba(20, 30, 50, 0.12);
+      --top-height: 52px;
+      --toolbar-height: 44px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: var(--top-height) 1fr;
+    }
+
+    .topbar {
+      height: var(--top-height);
+      display: grid;
+      grid-template-columns: auto auto auto auto auto auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+      z-index: 10;
+    }
+
+    .topbar.collapsed {
+      grid-template-columns: 1fr auto;
+    }
+
+    .topbar.collapsed:hover,
+    .topbar.menu-open {
+      grid-template-columns: auto auto auto auto auto auto 1fr auto;
+    }
+
+    .topbar.collapsed .top-control,
+    .topbar.collapsed .top-note {
+      display: none;
+    }
+
+    .topbar.collapsed:hover .top-control,
+    .topbar.collapsed:hover .top-note,
+    .topbar.menu-open .top-control,
+    .topbar.menu-open .top-note {
+      display: flex;
+    }
+
+    .topbar.collapsed:hover .system-summary,
+    .topbar.menu-open .system-summary {
+      display: none;
+    }
+
+    .system-summary {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .system-summary strong {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .top-control {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 86px;
+      font-size: 12px;
+      line-height: 1.1;
+    }
+
+    .top-control select,
+    .top-control button {
+      height: 24px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      cursor: pointer;
+    }
+
+    .top-note {
+      min-width: 0;
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      height: 32px;
+      min-width: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      cursor: pointer;
+    }
+
+    .icon-button:hover,
+    .top-control button:hover {
+      border-color: var(--accent);
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 42%) 10px minmax(420px, 58%);
+      gap: 0;
+      padding: 10px;
+    }
+
+    .workspace.layout-chat-right {
+      grid-template-columns: minmax(420px, 58%) 10px minmax(360px, 42%);
+    }
+
+    .workspace.layout-chat-right .left-area {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .workspace.layout-chat-right .splitter {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .workspace.layout-chat-right .right-area {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .splitter {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .splitter::before {
+      content: "";
+      width: 2px;
+      background: #aeb7c4;
+      border-radius: 999px;
+    }
+
+    .left-area,
+    .right-area {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .left-area {
+      grid-template-rows: 1fr 66px minmax(86px, auto);
+    }
+
+    .right-area {
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .panel-header strong {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .panel-tools {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mini-button {
+      height: 22px;
+      min-width: 24px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .panel-body {
+      min-height: 0;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .chat-log {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d7def0, #ffffff);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bubble {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .bubble .name {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .parameter-strip {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .input-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: 1fr var(--toolbar-height);
+      overflow: hidden;
+    }
+
+    .chat-input {
+      min-height: 52px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .bottom-tools {
+      display: grid;
+      grid-template-columns: repeat(5, auto) 1fr;
+      gap: 6px;
+      align-items: center;
+      padding: 5px 6px;
+      background: var(--panel-soft);
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+    }
+
+    .tool-button {
+      height: 32px;
+      min-width: 70px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .tool-button.primary {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .character-stage,
+    .image-stage {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .standee-box {
+      width: min(68%, 420px);
+      aspect-ratio: 2 / 3;
+      border: 1px dashed #aeb7c4;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .image-box {
+      width: min(76%, 720px);
+      aspect-ratio: 16 / 9;
+      border: 1px dashed #aeb7c4;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .app.world-open {
+      grid-template-rows: var(--top-height) 1fr;
+    }
+
+    .app.world-open .workspace,
+    .app.character-open .workspace {
+      display: none;
+    }
+
+    .world-overlay {
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .world-overlay.hidden,
+    .character-overlay.hidden {
+      display: none;
+    }
+
+    .character-overlay {
+      min-height: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .world-overlay-header,
+    .character-overlay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .world-frame,
+    .character-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    .tag-manager-window {
+      position: fixed;
+      right: 18px;
+      top: 78px;
+      width: 430px;
+      max-width: calc(100vw - 36px);
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      z-index: 50;
+      display: grid;
+      grid-template-rows: 36px auto 1fr 44px;
+    }
+
+    .tag-manager-window.hidden {
+      display: none;
+    }
+
+    .tag-manager-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .tag-manager-search {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tag-manager-search input {
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+
+    .tag-manager-body {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .tag-master-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .tag-icon {
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--panel-soft);
+      font-size: 12px;
+    }
+
+    .tag-manager-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--panel-soft);
+      border-top: 1px solid var(--line);
+    }
+
+    .floating-menu {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      width: 320px;
+      max-width: calc(100vw - 28px);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    .floating-menu.hidden {
+      display: none;
+    }
+
+    .floating-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      cursor: default;
+    }
+
+    .floating-body {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-row select,
+    .setting-row button {
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    @media (max-width: 1000px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        min-height: 100vh;
+        height: auto;
+      }
+
+      .workspace,
+      .workspace.layout-chat-right {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        overflow: visible;
+      }
+
+      .workspace.layout-chat-right .left-area,
+      .workspace.layout-chat-right .right-area,
+      .workspace.layout-chat-right .splitter {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .splitter {
+        display: none;
+      }
+
+      .left-area,
+      .right-area {
+        min-height: 640px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr auto auto;
+      }
+
+      .top-control,
+      .top-note {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar" id="topbar">
+      <div class="top-control">
+        <span>言語選択</span>
+        <select>
+          <option>日本語</option>
+          <option>English</option>
+        </select>
+      </div>
+      <div class="top-control">
+        <span>ラベル ON/OFF</span>
+        <button type="button">ON</button>
+      </div>
+      <div class="top-control">
+        <span>アイコン設定</span>
+        <button type="button">設定</button>
+      </div>
+      <div class="top-control">
+        <span>タグ管理</span>
+        <button type="button" id="tagManageButton">タグ</button>
+      </div>
+      <div class="top-control">
+        <span>画面レイアウト</span>
+        <button type="button" id="layoutToggleTop">切替</button>
+      </div>
+      <div class="top-control">
+        <span>世界</span>
+        <button type="button" id="worldToggleButton">ON</button>
+      </div>
+      <div class="top-control">
+        <span>キャラ</span>
+        <button type="button" id="characterToggleButton">キャラクター</button>
+      </div>
+      <div class="top-note">
+        上段のここはマウスオーバーで開く想定。ラベルレス時はシナリオ名と状態だけ残す。
+      </div>
+      <div class="system-summary">
+        <strong>シナリオ: カッコウ医院</strong>
+        <span>キャラ: 白井 結</span>
+        <span>LLM: 接続待ち</span>
+        <span>画像: 待機</span>
+      </div>
+      <button class="icon-button" type="button" id="toggleTop">メニュー ▲</button>
+    </header>
+
+
+  <section class="world-overlay hidden" id="worldOverlay">
+    <div class="world-overlay-header">
+      <strong>世界カード</strong>
+      <div>
+        <button class="mini-button" type="button" id="openWorldWindow">別窓</button>
+        <button class="mini-button" type="button" id="closeWorldOverlay">×</button>
+      </div>
+    </div>
+    <iframe class="world-frame" src="world.html" title="世界カード"></iframe>
+  </section>
+
+  <section class="character-overlay hidden" id="characterOverlay">
+    <div class="character-overlay-header">
+      <strong>キャラクターカード</strong>
+      <div>
+        <button class="mini-button" type="button" id="openCharacterWindow">別窓</button>
+        <button class="mini-button" type="button" id="closeCharacterOverlay">×</button>
+      </div>
+    </div>
+    <iframe class="character-frame" src="character.html" title="キャラクターカード"></iframe>
+  </section>
+
+    <main class="workspace" id="workspace">
+      <section class="left-area">
+        <section class="panel">
+          <div class="panel-header">
+            <strong>チャットログ</strong>
+            <div class="panel-tools">
+              <button class="mini-button" type="button">−</button>
+              <button class="mini-button" type="button">□</button>
+            </div>
+          </div>
+          <div class="panel-body chat-log">
+            <div class="message">
+              <div class="avatar">結</div>
+              <div class="bubble">
+                <div class="name">白井 結</div>
+                ここに会話ログが入ります。初期サイズはこのくらいで、必要ならマウスドラッグで左幅だけ変更する想定です。
+              </div>
+            </div>
+            <div class="message">
+              <div class="avatar">医</div>
+              <div class="bubble">
+                <div class="name">黒羽 究也</div>
+                キャラアイコンを押すと、右上の立ち絵や右下の返信画像を切り替える想定です。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="parameter-strip">
+          キャラパラメータ枠<br />喋ったキャラと連動 / 世界カードON/OFF指定
+        </section>
+
+        <section class="input-panel">
+          <textarea class="chat-input" placeholder="チャット入力枠"></textarea>
+          <div class="bottom-tools">
+            <button class="tool-button" type="button">新規チャット</button>
+            <button class="tool-button" type="button">再送</button>
+            <button class="tool-button primary" type="button">発言</button>
+            <button class="tool-button" type="button">持ち物</button>
+            <button class="tool-button" type="button">ステータス</button>
+            <span style="color: var(--muted);">ショートカット設定・クリア条件などは後で追加</span>
+          </div>
+        </section>
+      </section>
+
+      <div class="splitter" aria-hidden="true"></div>
+
+      <section class="right-area">
+        <section class="panel">
+          <div class="panel-header">
+            <strong>キャラ立ち絵</strong>
+            <span>レスポンシブ / contain表示</span>
+          </div>
+          <div class="panel-body character-stage">
+            <div class="standee-box">
+              キャラ立ち絵<br />初期表示は枠内 contain<br />横サイズでも扱えるようにする
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <strong>返信画像</strong>
+            <span>生成中・リロード・履歴切替</span>
+          </div>
+          <div class="panel-body image-stage">
+            <div class="image-box">
+              チャット返信結果からくる画像<br />表示は枠内 contain<br />生成元は 1920x1080 / 960x540 / 640x360 など
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <aside class="tag-manager-window hidden" id="tagManagerWindow">
+    <div class="tag-manager-header">
+      <strong>タグ管理</strong>
+      <button class="mini-button" type="button" id="closeTagManager">×</button>
+    </div>
+    <div class="tag-manager-search">
+      <input type="text" placeholder="タグ名でフィルター" />
+      <button class="mini-button" type="button">追加</button>
+    </div>
+    <div class="tag-manager-body">
+      <div class="tag-master-row">
+        <span class="tag-icon">女</span>
+        <strong>女子高生</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">学</span>
+        <strong>学生</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">医</span>
+        <strong>医療</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">家</span>
+        <strong>白井家</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+    </div>
+    <div class="tag-manager-footer">
+      <button class="mini-button" type="button">登録／更新</button>
+      <button class="mini-button" type="button" id="closeTagManagerFooter">閉じる</button>
+    </div>
+  </aside>
+
+  <aside class="floating-menu" id="floatingMenu">
+    <div class="floating-header">
+      <strong>レイアウト・表示設定</strong>
+      <button class="mini-button" type="button" id="closeFloat">×</button>
+    </div>
+    <div class="floating-body">
+      <div class="setting-row">
+        <span>チャット位置</span>
+        <select id="chatPosition">
+          <option value="left">左</option>
+          <option value="right">右</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span>上部メニュー</span>
+        <button type="button" id="toggleTopFromFloat">開閉</button>
+      </div>
+      <div class="setting-row">
+        <span>右側表示</span>
+        <select>
+          <option>上: 立ち絵 / 下: 返信画像</option>
+          <option>上: 返信画像 / 下: 立ち絵</option>
+          <option>立ち絵のみ</option>
+          <option>返信画像のみ</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span>初期画像比率</span>
+        <select>
+          <option>16:9</option>
+          <option>4:3</option>
+          <option>縦長</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const app = document.getElementById('app');
+    const topbar = document.getElementById('topbar');
+    const workspace = document.getElementById('workspace');
+    const toggleTop = document.getElementById('toggleTop');
+    const toggleTopFromFloat = document.getElementById('toggleTopFromFloat');
+    const layoutToggleTop = document.getElementById('layoutToggleTop');
+    const chatPosition = document.getElementById('chatPosition');
+    const floatingMenu = document.getElementById('floatingMenu');
+    const closeFloat = document.getElementById('closeFloat');
+    const worldToggleButton = document.getElementById('worldToggleButton');
+    const worldOverlay = document.getElementById('worldOverlay');
+    const closeWorldOverlay = document.getElementById('closeWorldOverlay');
+    const openWorldWindow = document.getElementById('openWorldWindow');
+    const characterToggleButton = document.getElementById('characterToggleButton');
+    const characterOverlay = document.getElementById('characterOverlay');
+    const closeCharacterOverlay = document.getElementById('closeCharacterOverlay');
+    const openCharacterWindow = document.getElementById('openCharacterWindow');
+    const tagManageButton = document.getElementById('tagManageButton');
+    const tagManagerWindow = document.getElementById('tagManagerWindow');
+    const closeTagManager = document.getElementById('closeTagManager');
+    const closeTagManagerFooter = document.getElementById('closeTagManagerFooter');
+
+    function setTopCollapsed(collapsed) {
+      topbar.classList.toggle('collapsed', collapsed);
+      topbar.classList.remove('menu-open');
+      toggleTop.textContent = collapsed ? 'メニュー ▼' : 'メニュー ▲';
+    }
+
+    function setChatPosition(position) {
+      const right = position === 'right';
+      workspace.classList.toggle('layout-chat-right', right);
+      chatPosition.value = right ? 'right' : 'left';
+    }
+
+    toggleTop.addEventListener('click', () => {
+      setTopCollapsed(!topbar.classList.contains('collapsed'));
+    });
+
+    topbar.addEventListener('mouseenter', () => {
+      if (topbar.classList.contains('collapsed')) {
+        topbar.classList.add('menu-open');
+      }
+    });
+
+    topbar.addEventListener('mouseleave', () => {
+      topbar.classList.remove('menu-open');
+    });
+
+    toggleTopFromFloat.addEventListener('click', () => {
+      setTopCollapsed(!topbar.classList.contains('collapsed'));
+    });
+
+    layoutToggleTop.addEventListener('click', () => {
+      setChatPosition(workspace.classList.contains('layout-chat-right') ? 'left' : 'right');
+    });
+
+    chatPosition.addEventListener('change', (event) => {
+      setChatPosition(event.target.value);
+    });
+
+    closeFloat.addEventListener('click', () => {
+      floatingMenu.classList.add('hidden');
+    });
+
+    function setWorldOpen(open) {
+      worldOverlay.classList.toggle('hidden', !open);
+      app.classList.toggle('world-open', open);
+
+      if (open) {
+        characterOverlay.classList.add('hidden');
+        app.classList.remove('character-open');
+      }
+    }
+
+    function setCharacterOpen(open) {
+      characterOverlay.classList.toggle('hidden', !open);
+      app.classList.toggle('character-open', open);
+
+      if (open) {
+        worldOverlay.classList.add('hidden');
+        app.classList.remove('world-open');
+      }
+    }
+
+    worldToggleButton.addEventListener('click', () => {
+      setWorldOpen(worldOverlay.classList.contains('hidden'));
+    });
+
+    closeWorldOverlay.addEventListener('click', () => {
+      setWorldOpen(false);
+    });
+
+    openWorldWindow.addEventListener('click', () => {
+      window.open('world.html', 'worldCard');
+    });
+
+    characterToggleButton.addEventListener('click', () => {
+      setCharacterOpen(characterOverlay.classList.contains('hidden'));
+    });
+
+    closeCharacterOverlay.addEventListener('click', () => {
+      setCharacterOpen(false);
+    });
+
+    openCharacterWindow.addEventListener('click', () => {
+      window.open('character.html', 'characterCard');
+    });
+
+    tagManageButton.addEventListener('click', () => {
+      tagManagerWindow.classList.toggle('hidden');
+    });
+
+    closeTagManager.addEventListener('click', () => {
+      tagManagerWindow.classList.add('hidden');
+    });
+
+    closeTagManagerFooter.addEventListener('click', () => {
+      tagManagerWindow.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
