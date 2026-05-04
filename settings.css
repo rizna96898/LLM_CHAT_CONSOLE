@@ -87,12 +87,16 @@ input {
 }
 
 .settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-row {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 12px 14px;
+  gap: 10px;
   align-items: center;
-  max-width: 760px;
-  font-size: 13px;
 }
 
 .settings-actions p {

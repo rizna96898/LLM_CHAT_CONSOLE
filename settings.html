@@ -19,15 +19,23 @@
       </section>
 
       <section class="help-block">
-        <p>ベースパスとは、LOCAL_FLASK_SERVERを置いたパス文字列を指定してください</p>
+        <p>ベースパスとは、LOCAL_FLASK_SERVERを置いたパス文字列を指定してください。</p>
         <p>例）C:¥LocalFlaskServer</p>
       </section>
 
       <section class="settings-actions">
-        <button type="button">SystemSettingsYamlを編集ボタン</button>
-        <p>使用するモデル、初期設定を記述してるyamlファイルを開きます。</p>
-
-        <button type="button">サーバー起動確認ボタン</button>
+        <div class="action-block">
+          <button>サーバー起動確認</button>
+          <p>接続状態を確認します。ローカルフラスクサーバーは個人で起動してから押下してください。</p>
+        </div>
+        <div class="action-block">
+          <button>SystemSettingsYamlを編集</button>
+          <p>使用するモデル、初期設定を記述してるyamlファイルを開きます。</p>
+        </div>
+        <div class="action-block">
+          <button>モデルロード</button>
+          <p>モデルを読み込みます。サーバ起動確認が済まないと失敗します。</p>
+        </div>
       </section>
 
       <footer class="settings-footer">
