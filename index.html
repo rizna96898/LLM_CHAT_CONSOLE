@@ -427,13 +427,46 @@
       background: #fff;
     }
 
-    .app.tag-manager-open .workspace {
+    .app.tag-manager-open .workspace,
+    .app.settings-open .workspace {
       display: none;
     }
 
     .app.tag-manager-open .world-overlay,
     .app.tag-manager-open .character-overlay {
       display: none;
+    }
+
+    .settings-overlay {
+      min-height: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .settings-overlay.hidden {
+      display: none;
+    }
+
+    .settings-overlay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .settings-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
     }
 
     .tag-manager-window {
@@ -643,11 +676,15 @@
         display: none;
       }
     }
+    .topbar.collapsed .top-control,
+    .topbar.collapsed .top-note {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="app" id="app">
-    <header class="topbar" id="topbar">
+    <header class="topbar collapsed" id="topbar">
       <div class="top-control">
         <span>言語選択</span>
         <select>
@@ -661,7 +698,7 @@
       </div>
       <div class="top-control">
         <span>アイコン設定</span>
-        <button type="button">設定</button>
+        <button type="button" id="settingsToggleButton">設定</button>
       </div>
       <div class="top-control">
         <span>タグ管理</span>
@@ -684,7 +721,7 @@
       </div>
       <div class="system-summary">
         <strong>シナリオ: カッコウ医院</strong>
-        <span>キャラ: キャラ名</span>
+        <span>キャラ: 白井 結</span>
         <span>LLM: 接続待ち</span>
         <span>画像: 待機</span>
       </div>
@@ -772,6 +809,17 @@
     </div>
   </section>
 
+  <section class="settings-overlay hidden" id="settingsOverlay">
+    <div class="settings-overlay-header">
+      <strong>設定</strong>
+      <div>
+        <button class="mini-button" type="button" id="openSettingsWindow">別窓</button>
+        <button class="mini-button" type="button" id="closeSettingsOverlay">×</button>
+      </div>
+    </div>
+    <iframe class="settings-frame" src="settings.html" title="設定"></iframe>
+  </section>
+
     <main class="workspace" id="workspace">
       <section class="left-area">
         <section class="panel">
@@ -786,14 +834,14 @@
             <div class="message">
               <div class="avatar">結</div>
               <div class="bubble">
-                <div class="name">キャラ名</div>
+                <div class="name">白井 結</div>
                 ここに会話ログが入ります。初期サイズはこのくらいで、必要ならマウスドラッグで左幅だけ変更する想定です。
               </div>
             </div>
             <div class="message">
               <div class="avatar">医</div>
               <div class="bubble">
-                <div class="name">プレイヤー</div>
+                <div class="name">黒羽 究也</div>
                 キャラアイコンを押すと、右上の立ち絵や右下の返信画像を切り替える想定です。
               </div>
             </div>
@@ -906,6 +954,10 @@
     const tagManagerWindow = document.getElementById('tagManagerWindow');
     const closeTagManager = document.getElementById('closeTagManager');
     const closeTagManagerFooter = document.getElementById('closeTagManagerFooter');
+    const settingsToggleButton = document.getElementById('settingsToggleButton');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
+    const openSettingsWindow = document.getElementById('openSettingsWindow');
 
     function setTopCollapsed(collapsed) {
       topbar.classList.toggle('collapsed', collapsed);
@@ -956,8 +1008,10 @@
       if (open) {
         characterOverlay.classList.add('hidden');
         tagManagerWindow.classList.add('hidden');
+        settingsOverlay.classList.add('hidden');
         app.classList.remove('character-open');
         app.classList.remove('tag-manager-open');
+        app.classList.remove('settings-open');
       }
     }
 
@@ -968,8 +1022,10 @@
       if (open) {
         worldOverlay.classList.add('hidden');
         tagManagerWindow.classList.add('hidden');
+        settingsOverlay.classList.add('hidden');
         app.classList.remove('world-open');
         app.classList.remove('tag-manager-open');
+        app.classList.remove('settings-open');
       }
     }
 
@@ -1004,8 +1060,10 @@
       if (open) {
         worldOverlay.classList.add('hidden');
         characterOverlay.classList.add('hidden');
+        settingsOverlay.classList.add('hidden');
         app.classList.remove('world-open');
         app.classList.remove('character-open');
+        app.classList.remove('settings-open');
       }
     }
 
@@ -1019,6 +1077,32 @@
 
     closeTagManagerFooter.addEventListener('click', () => {
       setTagManagerOpen(false);
+    });
+
+    function setSettingsOpen(open) {
+      settingsOverlay.classList.toggle('hidden', !open);
+      app.classList.toggle('settings-open', open);
+
+      if (open) {
+        worldOverlay.classList.add('hidden');
+        characterOverlay.classList.add('hidden');
+        tagManagerWindow.classList.add('hidden');
+        app.classList.remove('world-open');
+        app.classList.remove('character-open');
+        app.classList.remove('tag-manager-open');
+      }
+    }
+
+    settingsToggleButton.addEventListener('click', () => {
+      setSettingsOpen(settingsOverlay.classList.contains('hidden'));
+    });
+
+    closeSettingsOverlay.addEventListener('click', () => {
+      setSettingsOpen(false);
+    });
+
+    openSettingsWindow.addEventListener('click', () => {
+      window.open('settings.html', 'settingsWindow');
     });
   </script>
 </body>

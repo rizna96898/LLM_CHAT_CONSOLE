@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>設定画面</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <div class="settings-page">
+
+    <main class="settings-main">
+      <section class="settings-row base-path-row">
+        <label class="field">
+          <span>ベースパス</span>
+          <input type="text" value="" placeholder="例）C:\LocalFlaskServer" />
+        </label>
+        <button type="button">エクスプローラー</button>
+      </section>
+
+      <section class="help-block">
+        <p>ベースパスとは、LOCAL_FLASK_SERVERを置いたパス文字列を指定してください</p>
+        <p>例）C:¥LocalFlaskServer</p>
+      </section>
+
+      <section class="settings-actions">
+        <button type="button">SystemSettingsYamlを編集ボタン</button>
+        <p>使用するモデル、初期設定を記述してるyamlファイルを開きます。</p>
+
+        <button type="button">サーバー起動確認ボタン</button>
+      </section>
+
+      <footer class="settings-footer">
+        <button type="button">適用</button>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
