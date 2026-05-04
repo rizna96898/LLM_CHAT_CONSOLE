@@ -153,17 +153,8 @@ applyButton.addEventListener("click", () => {
   const value = basePathInput.value.trim();
   localStorage.setItem(STORAGE_KEY, value);
 
-  const parentDoc = window.parent.document;
-  const title = parentDoc.querySelector("#settingsOverlay .settings-overlay-header strong");
-
-  if (title) {
-    const original = title.textContent;
-    title.textContent = "設定　適用しました。";
-    title.style.color = "#0f7a2f";
-
-    setTimeout(() => {
-      title.textContent = original;
-      title.style.color = "";
-    }, 2000);
-  }
+  window.parent.postMessage({
+    type: "settings_applied",
+    message: "設定　適用しました。"
+  }, "*");
 });

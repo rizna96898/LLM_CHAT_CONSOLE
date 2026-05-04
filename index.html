@@ -1124,6 +1124,26 @@
     openSettingsWindow.addEventListener('click', () => {
       window.open('settings.html', 'settingsWindow');
     });
+
+    window.addEventListener("message", (event) => {
+      if (!event.data || event.data.type !== "settings_applied") {
+        return;
+      }
+
+      const title = document.getElementById("settingsTitle");
+      if (!title) {
+        return;
+      }
+
+      const original = title.textContent;
+      title.textContent = event.data.message;
+      title.style.color = "#0f7a2f";
+
+      setTimeout(() => {
+        title.textContent = original;
+        title.style.color = "";
+      }, 2000);
+    });
   </script>
 </body>
 </html>

@@ -1,161 +1,252 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
   <title>キャラクターカードUI</title>
-  <link rel="stylesheet" href="character.css" />
+  <link rel="stylesheet" href="./character.css">
 </head>
 <body>
   <div class="character-page">
+
     <aside class="character-list">
       <div class="list-head">
-        <strong>キャラリスト</strong>
-        <button type="button">追加</button>
+        <span>キャラリスト</span>
+        <button id="addCharacterButton">追加</button>
       </div>
-      <p>クリックすると<br />内容呼び出し</p>
-      <button class="character-item active" type="button">白井 結</button>
+      <div id="characterListBody"></div>
     </aside>
 
     <main class="character-main">
       <header class="character-title">
         <div class="title-stack">
           <label>
-            <span>キャラ名</span>
-            <input type="text" value="白井 結" />
+            キャラクターID
+            <input id="characterIdInput" type="text">
+            <span>リストの表示順や処理で使用します。</span>
           </label>
+
+          <label>
+            キャラクター名
+            <input id="characterNameInput" type="text">
+            <span>ここの名前でチャットを行います。</span>
+          </label>
+
           <div class="tag-row">
             <span class="tag-label-title">タグ</span>
-            <button class="tag-action-button" type="button" id="openTagPicker">設定</button>
-            <button class="tag-action-button" type="button">全削除</button>
-            <span class="tag-chip">女子高生 <button type="button">×</button></span>
-            <span class="tag-chip">学生 <button type="button">×</button></span>
+            <button class="tag-action-button" id="tagSettingButton">設定</button>
+            <button class="tag-action-button" id="tagClearButton">全削除</button>
+            <span id="tagList"></span>
           </div>
         </div>
       </header>
 
       <section class="character-grid">
-        <section class="image-column">
-          <section class="image-box icon-box">
+
+        <div class="image-column">
+          <div class="image-box">
             <div class="box-header">
-              <strong>アイコン</strong>
-              <button type="button">設定</button>
+              <span>アイコン</span>
+              <button>設定</button>
             </div>
             <div class="icon-preview">アイコン画像</div>
-          </section>
+          </div>
 
-          <section class="image-box standee-box">
+          <div class="image-box">
             <div class="box-header">
-              <strong>立ち絵</strong>
-              <button type="button">設定</button>
+              <span>立ち絵</span>
+              <button>設定</button>
             </div>
             <div class="standee-preview">立ち絵画像</div>
-          </section>
-        </section>
-
-        <section class="settings-box">
-          <div class="box-header">
-            <strong>キャラクター設定</strong>
-            <button type="button">初期化</button>
           </div>
-          <textarea spellcheck="false">名前:
-  表示名: 白井 結
-  ふりがな: しらい ゆい
-  識別子: shirai_yui
+        </div>
 
-基本情報:
-  性別: 女性
-  年齢: 18
-  職業: 女子高校生
-  身長: 155cm
-
-外見:
-  髪:
-    色: 黒髪
-    長さ: 長髪
-    髪型: ポニーテール
-  体型:
-    バスト: 99
-    ブラジャーのカップサイズ: I
-    ウエスト: 60
-    ヒップ: 90
-
-服装:
-  通学時:
-    - 学校指定のブレザー
-    - ルーズソックス
-    - ローファー
-  私服:
-    - ワンピース
-
-好み:
-  好きな色: 白
-
-性格:
-  基本:
-    - 明るい
-    - 親しみやすい
-  会話傾向:
-    - 状況に応じてトーンを調整する
-    - 暗くならないが、軽くもしない
-    - 親しい関係になると敬語は使わない
-
-対人傾向:
-  ユーザー: 未設定
-</textarea>
-        </section>
-
-        <aside class="memo-box">
-          <p>←スクロールバー必要</p>
-          <p>←言語設定で言語UIにそのうちするようにする</p>
-        </aside>
+        <div class="settings-box">
+          <div class="box-header">
+            <span>キャラクター設定</span>
+            <button id="initializeButton">初期化</button>
+          </div>
+          <textarea id="characterSettingInput"></textarea>
+        </div>
       </section>
 
       <footer class="character-footer">
-        <button type="button">削除</button>
-        <button type="button">登録／更新</button>
+        <button id="deleteButton">削除</button>
+        <button id="saveButton">登録／更新</button>
       </footer>
+
     </main>
   </div>
-  <aside class="tag-picker-window hidden" id="tagPickerWindow">
-    <div class="tag-picker-header">
-      <strong>タグ選択</strong>
-      <button type="button" id="closeTagPicker">×</button>
-    </div>
-    <div class="tag-picker-search">
-      <input type="text" placeholder="タグ名でフィルター" />
-    </div>
-    <div class="tag-picker-body">
-      <label><input type="checkbox" checked /> 女子高生</label>
-      <label><input type="checkbox" checked /> 学生</label>
-      <label><input type="checkbox" /> 医療</label>
-      <label><input type="checkbox" /> 白井家</label>
-      <label><input type="checkbox" /> メイン</label>
-      <label><input type="checkbox" /> サブ</label>
-    </div>
-    <div class="tag-picker-footer">
-      <button type="button">反映</button>
-      <button type="button" id="closeTagPickerFooter">閉じる</button>
-    </div>
-  </aside>
 
   <script>
-    const openTagPicker = document.getElementById('openTagPicker');
-    const tagPickerWindow = document.getElementById('tagPickerWindow');
-    const closeTagPicker = document.getElementById('closeTagPicker');
-    const closeTagPickerFooter = document.getElementById('closeTagPickerFooter');
+    const STORAGE_KEY = "char_list";
 
-    openTagPicker.addEventListener('click', () => {
-      tagPickerWindow.classList.toggle('hidden');
+    let charList = [];
+    let selectedId = null;
+
+    const characterListBody = document.getElementById("characterListBody");
+    const characterIdInput = document.getElementById("characterIdInput");
+    const characterNameInput = document.getElementById("characterNameInput");
+    const characterSettingInput = document.getElementById("characterSettingInput");
+    const tagList = document.getElementById("tagList");
+
+    function loadCharList() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        charList = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        charList = [];
+      }
+
+      charList.sort((a, b) => String(a.id ?? "").localeCompare(String(b.id ?? "")));
+    }
+
+    function saveCharList() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(charList));
+    }
+
+    function createNewCharacter() {
+      return {
+        id: "new_character",
+        name: "新しいキャラクター",
+        tags: [],
+        setting: ""
+      };
+    }
+
+    function createUniqueId(baseId) {
+      let id = baseId;
+      let count = 2;
+
+      while (charList.some(char => char.id === id)) {
+        id = `${baseId}_${count}`;
+        count++;
+      }
+
+      return id;
+    }
+
+    function getSelectedCharacter() {
+      return charList.find(char => char.id === selectedId) ?? null;
+    }
+
+    function renderCharacterList() {
+      characterListBody.innerHTML = "";
+
+      for (const char of charList) {
+        const button = document.createElement("button");
+        button.className = "character-item";
+        button.textContent = char.name || char.id || "名称未設定";
+
+        if (char.id === selectedId) {
+          button.classList.add("active");
+        }
+
+        button.addEventListener("click", () => {
+          selectedId = char.id;
+          renderCharacterList();
+        });
+
+        characterListBody.appendChild(button);
+      }
+    }
+
+    function clearEditor() {
+      characterIdInput.value = "";
+      characterNameInput.value = "";
+      characterSettingInput.value = "";
+      tagList.innerHTML = "";
+    }
+
+    function renderEditor(char) {
+      characterIdInput.value = char.id ?? "";
+      characterNameInput.value = char.name ?? "";
+      characterSettingInput.value = char.setting ?? "";
+      renderTags(char.tags ?? []);
+    }
+
+    function renderTags(tags) {
+      tagList.innerHTML = "";
+
+      for (const tag of tags) {
+        const span = document.createElement("span");
+        span.className = "tag-chip";
+        span.textContent = tag;
+        tagList.appendChild(span);
+      }
+    }
+
+    document.getElementById("addCharacterButton").addEventListener("click", () => {
+      const newChar = createNewCharacter();
+      newChar.id = createUniqueId(newChar.id);
+
+      charList.push(newChar);
+      selectedId = newChar.id;
+
+      renderCharacterList();
+      renderEditor(newChar);
     });
 
-    closeTagPicker.addEventListener('click', () => {
-      tagPickerWindow.classList.add('hidden');
+    document.getElementById("saveButton").addEventListener("click", () => {
+      let char = getSelectedCharacter();
+
+      if (!char) {
+        char = createNewCharacter();
+        char.id = createUniqueId(char.id);
+        charList.push(char);
+      }
+
+      const oldId = char.id;
+
+      char.id = characterIdInput.value.trim() || oldId || "new_character";
+      char.name = characterNameInput.value.trim() || "新しいキャラクター";
+      char.setting = characterSettingInput.value;
+
+      selectedId = char.id;
+
+      saveCharList();
+      loadCharList();
+      renderCharacterList();
+      renderEditor(getSelectedCharacter() ?? createNewCharacter());
     });
 
-    closeTagPickerFooter.addEventListener('click', () => {
-      tagPickerWindow.classList.add('hidden');
+    document.getElementById("deleteButton").addEventListener("click", () => {
+      if (!selectedId) return;
+
+      charList = charList.filter(char => char.id !== selectedId);
+      selectedId = charList[0]?.id ?? null;
+
+      saveCharList();
+      renderCharacterList();
+
+      const nextChar = getSelectedCharacter();
+      renderEditor(nextChar ?? createNewCharacter());
     });
+
+    document.getElementById("initializeButton").addEventListener("click", () => {
+      characterSettingInput.value = "";
+    });
+
+    document.getElementById("tagClearButton").addEventListener("click", () => {
+      const char = getSelectedCharacter();
+      if (!char) return;
+
+      char.tags = [];
+      saveCharList();
+      renderTags([]);
+    });
+
+    loadCharList();
+
+    if (charList.length > 0) {
+      selectedId = charList[0].id;
+      renderEditor(charList[0]);
+    } else {
+      selectedId = null;
+      clearEditor();   // ★ここ
+    }
+
+    renderCharacterList();
   </script>
 </body>
 </html>
