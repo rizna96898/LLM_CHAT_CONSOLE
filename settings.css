@@ -141,6 +141,18 @@ input {
   font-weight: 700;
 }
 
+.top-message {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  display: none;
+  z-index: 9999;
+}
+
 @media (max-width: 800px) {
   .settings-main {
     padding: 18px;
@@ -158,3 +170,5 @@ input {
     justify-content: flex-end;
   }
 }
+
+

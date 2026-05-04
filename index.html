@@ -683,6 +683,7 @@
   </style>
 </head>
 <body>
+  <div id="topMessage" class="top-message"></div>
   <div class="app" id="app">
     <header class="topbar collapsed" id="topbar">
       <div class="top-control">
@@ -811,7 +812,7 @@
 
   <section class="settings-overlay hidden" id="settingsOverlay">
     <div class="settings-overlay-header">
-      <strong>設定</strong>
+      <h2 id="settingsTitle">設定</h2>
       <div>
         <button class="mini-button" type="button" id="openSettingsWindow">別窓</button>
         <button class="mini-button" type="button" id="closeSettingsOverlay">×</button>
@@ -969,6 +970,25 @@
       const right = position === 'right';
       workspace.classList.toggle('layout-chat-right', right);
       chatPosition.value = right ? 'right' : 'left';
+    }
+
+    function showTopMessage(text, type) {
+      const el = document.getElementById("topMessage");
+      el.textContent = text;
+
+      if (type === "success") {
+        el.style.background = "#e6f4ea";
+        el.style.color = "#0f7a2f";
+      } else {
+        el.style.background = "#fdecea";
+        el.style.color = "#c62828";
+      }
+
+      el.style.display = "block";
+
+      setTimeout(() => {
+        el.style.display = "none";
+      }, 2000);
     }
 
     toggleTop.addEventListener('click', () => {

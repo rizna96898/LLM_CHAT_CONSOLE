@@ -1,3 +1,4 @@
+const STORAGE_KEY = "base_path";
 const FLASK_BASE_URL = "http://127.0.0.1:5000";
 
 const basePathInput = document.getElementById("basePathInput");
@@ -13,6 +14,13 @@ const systemYamlMessage = document.getElementById("systemYamlMessage");
 const modelLoadMessage = document.getElementById("modelLoadMessage");
 
 const SERVER_DOWN_MESSAGE = `${FLASK_BASE_URL} が起動してません。`;
+
+document.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    basePathInput.value = saved;
+  }
+});
 
 function setMessage(element, text, type = "") {
   element.textContent = text || "";
@@ -142,8 +150,15 @@ loadModelButton.addEventListener("click", async () => {
 });
 
 applyButton.addEventListener("click", () => {
-  localStorage.setItem("local_llm_console_base_path", basePathInput.value || "");
-  setMessage(basePathMessage, "設定を保存しました。", "success");
+  const value = basePathInput.value.trim();
+  localStorage.setItem("base_path", value);
+
+  const title = document.getElementById("settingsTitle");
+  title.textContent = "設定（適用しました）";
+
+  setTimeout(() => {
+    title.textContent = "設定";
+  }, 2000);
 });
 
 basePathInput.value = localStorage.getItem("local_llm_console_base_path") || "";
