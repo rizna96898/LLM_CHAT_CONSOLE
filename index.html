@@ -427,20 +427,23 @@
       background: #fff;
     }
 
+    .app.tag-manager-open .workspace {
+      display: none;
+    }
+
+    .app.tag-manager-open .world-overlay,
+    .app.tag-manager-open .character-overlay {
+      display: none;
+    }
+
     .tag-manager-window {
-      position: fixed;
-      right: 18px;
-      top: 78px;
-      width: 430px;
-      max-width: calc(100vw - 36px);
-      background: rgba(255, 255, 255, 0.98);
-      border: 1px solid var(--line);
-      border-radius: 12px;
+      min-height: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
       box-shadow: var(--shadow);
       overflow: hidden;
-      z-index: 50;
       display: grid;
-      grid-template-rows: 36px auto 1fr 44px;
+      grid-template-rows: 38px auto 1fr 44px;
     }
 
     .tag-manager-window.hidden {
@@ -452,45 +455,78 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 7px 10px;
+      padding: 7px 12px;
       background: var(--panel-soft);
       border-bottom: 1px solid var(--line);
       font-size: 13px;
     }
 
-    .tag-manager-search {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      padding: 10px;
+    .tag-manager-controls {
+      padding: 12px 16px;
       border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: minmax(260px, 420px) auto 1fr;
+      grid-template-rows: auto auto;
+      gap: 8px 10px;
+      align-items: center;
     }
 
-    .tag-manager-search input {
-      height: 30px;
+    .tag-manager-controls input {
+      height: 34px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 4px 8px;
+      padding: 4px 10px;
+      background: #fff;
+    }
+
+    .tag-manager-controls .tag-register-input {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .tag-manager-controls .tag-add-button {
+      grid-column: 2;
+      grid-row: 1;
+      height: 34px;
+      padding: 0 14px;
+    }
+
+    .tag-manager-controls .tag-filter-input {
+      grid-column: 1 / span 2;
+      grid-row: 2;
+    }
+
+    .tag-manager-help {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .tag-manager-body {
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-      max-height: 280px;
+      padding: 16px;
+      display: flex;
+      align-content: flex-start;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
       overflow: auto;
+      background: #fff;
     }
 
     .tag-master-row {
-      display: grid;
-      grid-template-columns: 28px 1fr auto auto;
+      display: inline-grid;
+      grid-template-columns: 28px auto auto auto;
       align-items: center;
       gap: 8px;
+      min-height: 36px;
       padding: 6px 8px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
+      border-radius: 999px;
+      background: var(--panel-soft);
       font-size: 13px;
+      white-space: nowrap;
     }
 
     .tag-icon {
@@ -500,7 +536,7 @@
       border-radius: 50%;
       display: grid;
       place-items: center;
-      background: var(--panel-soft);
+      background: #fff;
       font-size: 12px;
     }
 
@@ -509,7 +545,7 @@
       align-items: center;
       justify-content: flex-end;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 8px 12px;
       background: var(--panel-soft);
       border-top: 1px solid var(--line);
     }
@@ -648,7 +684,7 @@
       </div>
       <div class="system-summary">
         <strong>シナリオ: カッコウ医院</strong>
-        <span>キャラ: 白井 結</span>
+        <span>キャラ: キャラ名</span>
         <span>LLM: 接続待ち</span>
         <span>画像: 待機</span>
       </div>
@@ -678,6 +714,64 @@
     <iframe class="character-frame" src="character.html" title="キャラクターカード"></iframe>
   </section>
 
+
+  <section class="tag-manager-window hidden" id="tagManagerWindow">
+    <div class="tag-manager-header">
+      <strong>タグ管理</strong>
+      <button class="mini-button" type="button" id="closeTagManager">×</button>
+    </div>
+    <div class="tag-manager-controls">
+      <input class="tag-register-input" type="text" placeholder="登録するタグ名" />
+      <button class="tag-add-button" type="button">登録</button>
+      <input class="tag-filter-input" type="text" placeholder="フィルター（入力したら下を絞り込み）" />
+      <div class="tag-manager-help">
+        タグ名とアイコンを管理する画面。キャラ側では、この一覧から複数選択する想定。
+      </div>
+    </div>
+    <div class="tag-manager-body">
+      <div class="tag-master-row">
+        <span class="tag-icon">女</span>
+        <strong>女子高生</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">学</span>
+        <strong>学生</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">医</span>
+        <strong>医療</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">家</span>
+        <strong>白井家</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">メ</span>
+        <strong>メイン</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+      <div class="tag-master-row">
+        <span class="tag-icon">サ</span>
+        <strong>サブ</strong>
+        <button class="mini-button" type="button">編集</button>
+        <button class="mini-button" type="button">削除</button>
+      </div>
+    </div>
+    <div class="tag-manager-footer">
+      <button class="mini-button" type="button">登録／更新</button>
+      <button class="mini-button" type="button" id="closeTagManagerFooter">閉じる</button>
+    </div>
+  </section>
+
     <main class="workspace" id="workspace">
       <section class="left-area">
         <section class="panel">
@@ -692,14 +786,14 @@
             <div class="message">
               <div class="avatar">結</div>
               <div class="bubble">
-                <div class="name">白井 結</div>
+                <div class="name">キャラ名</div>
                 ここに会話ログが入ります。初期サイズはこのくらいで、必要ならマウスドラッグで左幅だけ変更する想定です。
               </div>
             </div>
             <div class="message">
               <div class="avatar">医</div>
               <div class="bubble">
-                <div class="name">黒羽 究也</div>
+                <div class="name">プレイヤー</div>
                 キャラアイコンを押すと、右上の立ち絵や右下の返信画像を切り替える想定です。
               </div>
             </div>
@@ -752,47 +846,6 @@
       </section>
     </main>
   </div>
-
-  <aside class="tag-manager-window hidden" id="tagManagerWindow">
-    <div class="tag-manager-header">
-      <strong>タグ管理</strong>
-      <button class="mini-button" type="button" id="closeTagManager">×</button>
-    </div>
-    <div class="tag-manager-search">
-      <input type="text" placeholder="タグ名でフィルター" />
-      <button class="mini-button" type="button">追加</button>
-    </div>
-    <div class="tag-manager-body">
-      <div class="tag-master-row">
-        <span class="tag-icon">女</span>
-        <strong>女子高生</strong>
-        <button class="mini-button" type="button">編集</button>
-        <button class="mini-button" type="button">削除</button>
-      </div>
-      <div class="tag-master-row">
-        <span class="tag-icon">学</span>
-        <strong>学生</strong>
-        <button class="mini-button" type="button">編集</button>
-        <button class="mini-button" type="button">削除</button>
-      </div>
-      <div class="tag-master-row">
-        <span class="tag-icon">医</span>
-        <strong>医療</strong>
-        <button class="mini-button" type="button">編集</button>
-        <button class="mini-button" type="button">削除</button>
-      </div>
-      <div class="tag-master-row">
-        <span class="tag-icon">家</span>
-        <strong>白井家</strong>
-        <button class="mini-button" type="button">編集</button>
-        <button class="mini-button" type="button">削除</button>
-      </div>
-    </div>
-    <div class="tag-manager-footer">
-      <button class="mini-button" type="button">登録／更新</button>
-      <button class="mini-button" type="button" id="closeTagManagerFooter">閉じる</button>
-    </div>
-  </aside>
 
   <aside class="floating-menu" id="floatingMenu">
     <div class="floating-header">
@@ -902,7 +955,9 @@
 
       if (open) {
         characterOverlay.classList.add('hidden');
+        tagManagerWindow.classList.add('hidden');
         app.classList.remove('character-open');
+        app.classList.remove('tag-manager-open');
       }
     }
 
@@ -912,7 +967,9 @@
 
       if (open) {
         worldOverlay.classList.add('hidden');
+        tagManagerWindow.classList.add('hidden');
         app.classList.remove('world-open');
+        app.classList.remove('tag-manager-open');
       }
     }
 
@@ -940,16 +997,28 @@
       window.open('character.html', 'characterCard');
     });
 
+    function setTagManagerOpen(open) {
+      tagManagerWindow.classList.toggle('hidden', !open);
+      app.classList.toggle('tag-manager-open', open);
+
+      if (open) {
+        worldOverlay.classList.add('hidden');
+        characterOverlay.classList.add('hidden');
+        app.classList.remove('world-open');
+        app.classList.remove('character-open');
+      }
+    }
+
     tagManageButton.addEventListener('click', () => {
-      tagManagerWindow.classList.toggle('hidden');
+      setTagManagerOpen(tagManagerWindow.classList.contains('hidden'));
     });
 
     closeTagManager.addEventListener('click', () => {
-      tagManagerWindow.classList.add('hidden');
+      setTagManagerOpen(false);
     });
 
     closeTagManagerFooter.addEventListener('click', () => {
-      tagManagerWindow.classList.add('hidden');
+      setTagManagerOpen(false);
     });
   </script>
 </body>
