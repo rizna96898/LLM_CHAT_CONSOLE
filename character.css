@@ -411,6 +411,22 @@ textarea {
   }
 }
 
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-left: 8px;
+  display: inline;  /* ←これ追加 */
+}
+.title-stack label {
+  display: grid;
+  grid-template-columns: 140px 1fr 260px auto;
+  align-items: center;
+  column-gap: 12px;
+}
+.title-stack input {
+  text-align: left;
+}
+
 @media (max-width: 850px) {
   html,
   body {
