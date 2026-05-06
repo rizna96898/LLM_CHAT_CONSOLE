@@ -48,7 +48,7 @@
     .topbar {
       height: var(--top-height);
       display: grid;
-      grid-template-columns: auto auto auto auto auto auto 1fr auto;
+      grid-template-columns: repeat(8, auto) minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
       padding: 6px 10px;
@@ -64,7 +64,7 @@
 
     .topbar.collapsed:hover,
     .topbar.menu-open {
-      grid-template-columns: auto auto auto auto auto auto 1fr auto;
+      grid-template-columns: repeat(8, auto) minmax(0, 1fr) auto;
     }
 
     .topbar.collapsed .top-control,
@@ -698,8 +698,12 @@
         <button type="button">ON</button>
       </div>
       <div class="top-control">
-        <span>アイコン設定</span>
+        <span>接続環境設定</span>
         <button type="button" id="settingsToggleButton">設定</button>
+      </div>
+      <div class="top-control">
+        <span>プレイヤー設定</span>
+        <button type="button" id="playerSettingsToggleButton">プレイヤー設定</button>
       </div>
       <div class="top-control">
         <span>タグ管理</span>

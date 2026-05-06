@@ -4,18 +4,20 @@
   --line-dark: #1f2933;
   --text: #111827;
   --muted: #4b5563;
-  --panel: #ffffff;
   --panel-soft: #f7f8fb;
   --accent: #4f7cff;
-  --shadow: 0 6px 18px rgba(20, 30, 50, 0.10);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   color: var(--text);
   font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   background: var(--bg);
@@ -45,6 +47,7 @@ input {
 textarea {
   width: 100%;
   height: 100%;
+  min-height: 0;
   resize: none;
   border: 1px solid var(--line-dark);
   border-radius: 4px;
@@ -57,16 +60,20 @@ textarea {
 }
 
 .world-page {
-  min-height: 100vh;
+  height: calc(100vh - 78px);
+  min-height: 0;
   display: grid;
-  grid-template-columns: 170px 1fr;
+  grid-template-columns: 170px minmax(0, 1fr);
   background: var(--bg);
 }
 
 .scenario-list {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
   padding: 14px 12px;
   border-right: 1px solid var(--line);
-  background: #fff;
+  background: var(--bg);
   font-size: 13px;
 }
 
@@ -104,47 +111,63 @@ textarea {
 
 .world-main {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-rows: 44px 1fr 42px;
+  grid-template-rows: 96px minmax(0, 1fr) 42px;
   padding: 0 22px;
 }
 
 .world-title {
-  display: flex;
-  justify-content: center;
+  display: grid;
   align-items: center;
   border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.title-stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
 }
 
 .world-title label {
-  display: flex;
+  width: 760px;
+  display: grid;
+  grid-template-columns: 130px 320px 1fr;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   font-weight: 700;
 }
 
+.form-label {
+  text-align: right;
+}
+
 .world-title input {
-  width: 260px;
+  width: 100%;
   text-align: center;
   font-weight: 700;
 }
 
 .world-grid {
   min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-columns: 300px 340px 340px;
-  grid-template-rows: 180px 220px 1fr;
-  gap: 18px 28px;
-  align-content: start;
-  padding-top: 18px;
-  overflow: auto;
+  grid-template-columns: 300px 300px 340px;
+  grid-template-rows: 150px minmax(0, 1fr);
+  gap: 14px 28px;
+  padding-top: 14px;
+  padding-bottom: 12px;
+  overflow: hidden;
 }
 
 .box {
   min-width: 0;
+  min-height: 0;
   display: grid;
-  grid-template-rows: 26px 1fr;
+  grid-template-rows: 26px minmax(0, 1fr);
 }
 
 .box-header {
@@ -156,11 +179,13 @@ textarea {
 }
 
 .box-header button {
-  height: 22px;
-  padding: 0 8px;
+  height: 24px;
+  padding: 0 10px;
   font-weight: 700;
-  border-color: transparent;
-  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
 }
 
 .participants-box {
@@ -168,8 +193,14 @@ textarea {
   grid-row: 1;
 }
 
+.participants-yaml-box {
+  grid-column: 2;
+  grid-row: 1;
+}
+
 .participants-box table {
   width: 100%;
+  height: 100%;
   border-collapse: collapse;
   background: #fff;
   border: 1px solid var(--line-dark);
@@ -188,23 +219,13 @@ textarea {
   background: var(--panel-soft);
 }
 
-.goal-box {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.message-box {
-  grid-column: 3;
-  grid-row: 1;
-}
-
 .scenario-section {
   grid-column: 1 / span 2;
-  grid-row: 2 / span 2;
+  grid-row: 2;
+  min-height: 0;
   display: grid;
-  grid-template-rows: 26px repeat(5, 104px);
-  gap: 10px;
-  align-content: start;
+  grid-template-rows: 26px repeat(3, 1fr) 1fr;
+  gap: 8px;
 }
 
 .section-title {
@@ -213,17 +234,29 @@ textarea {
 }
 
 .yaml-block {
+  min-width: 0;
+  min-height: 0;
   display: grid;
-  grid-template-rows: 22px 1fr;
+  grid-template-rows: 22px minmax(0, 1fr);
   font-size: 14px;
   font-weight: 700;
 }
 
-.params-box {
+.bottom-two {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.right-stack {
   grid-column: 3;
-  grid-row: 2;
-  height: 220px;
+  grid-row: 1 / span 2;
   min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 14px;
 }
 
 .world-footer {
@@ -231,6 +264,11 @@ textarea {
   justify-content: flex-end;
   align-items: center;
   gap: 18px;
+  background: var(--bg);
+  margin-left: -22px;
+  margin-right: -22px;
+  padding-left: 22px;
+  padding-right: 22px;
   border-top: 1px solid var(--line);
 }
 
@@ -239,71 +277,49 @@ textarea {
   padding: 0 12px;
   font-weight: 700;
 }
+.participant-panel {
+  width: 100%;
+  height: 100%;
 
-@media (max-width: 1200px) {
-  .world-page {
-    grid-template-columns: 140px 1fr;
-  }
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
 
-  .world-main {
-    padding: 0 14px;
-  }
+  border: 1px solid var(--line-dark);
+  border-radius: 4px;
+  background: #fff;
 
-  .world-grid {
-    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1fr);
-    grid-template-rows: auto;
-  }
-
-  .participants-box {
-    grid-column: 1;
-    grid-row: auto;
-    height: 180px;
-  }
-
-  .goal-box {
-    grid-column: 2;
-    grid-row: auto;
-    height: 180px;
-  }
-
-  .message-box {
-    grid-column: 1 / span 2;
-    grid-row: auto;
-    height: 160px;
-  }
-
-  .scenario-section {
-    grid-column: 1 / span 2;
-    grid-row: auto;
-  }
-
-  .params-box {
-    grid-column: 1 / span 2;
-    grid-row: auto;
-    height: 220px;
-  }
+  overflow: hidden;
 }
 
-@media (max-width: 800px) {
-  .world-page {
-    grid-template-columns: 1fr;
-  }
+.participant-header {
+  display: grid;
+  grid-template-columns: 1fr 120px;
 
-  .scenario-list {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
+  border-bottom: 1px solid var(--line-dark);
+  background: var(--panel-soft);
 
-  .world-grid {
-    grid-template-columns: 1fr;
-  }
+  font-weight: 700;
+  font-size: 14px;
+}
 
-  .participants-box,
-  .goal-box,
-  .message-box,
-  .scenario-section,
-  .params-box {
-    grid-column: 1;
-    grid-row: auto;
-  }
+.participant-header > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-right: 1px solid var(--line-dark);
+}
+
+.participant-header > div:last-child {
+  border-right: none;
+}
+
+.participant-body {
+  min-height: 0;
+
+  overflow-y: auto;
+
+  padding: 6px 8px;
+
+  background: #fff;
 }

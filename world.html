@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>世界カードUI</title>
   <link rel="stylesheet" href="world.css" />
 </head>
@@ -13,73 +12,63 @@
         <strong>シナリオリスト</strong>
         <button type="button">追加</button>
       </div>
-      <p>クリックすると<br />内容呼び出し</p>
-      <button class="scenario-item active" type="button">カッコウ医院編</button>
+
+      <p>クリックすると<br>内容呼び出し</p>
+
+      <button type="button" class="scenario-item active">カッコウ医院編</button>
     </aside>
 
     <main class="world-main">
-      <header class="world-title">
-        <label>
-          <span>シナリオ名</span>
-          <input type="text" value="カッコウ医院編" />
-        </label>
-      </header>
+      <section class="world-title">
+        <div class="title-stack">
+          <label>
+            <span class="form-label">世界ID</span>
+            <input type="text" value="kakko_clinic" />
+            <span>リストの表示順や処理で使用します。</span>
+          </label>
+
+          <label>
+            <span class="form-label">世界名</span>
+            <input type="text" value="カッコウ医院編" />
+            <span>ここの名前で世界設定を表示します。</span>
+          </label>
+        </div>
+      </section>
 
       <section class="world-grid">
-        <section class="box participants-box">
+        <div class="box participants-box">
           <div class="box-header">
             <strong>登場人物</strong>
-            <button type="button">追加</button>
-            <span>←アイコンと名前</span>
+            <button type="button">隣のyaml内容を反映</button>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>名前</th>
-                <th>役割</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>黒羽 究也</td>
-                <td>プレイヤー</td>
-              </tr>
-              <tr>
-                <td>白井 結</td>
-                <td>メイン</td>
-              </tr>
-              <tr>
-                <td>白井 圭太</td>
-                <td>サブ</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
 
-        <section class="box goal-box">
+          <div class="participant-panel">
+            <div class="participant-header">
+              <div>名前</div>
+              <div>役割</div>
+            </div>
+
+            <div class="participant-body">
+            </div>
+          </div>
+        </div>
+
+        <div class="box participants-yaml-box">
           <div class="box-header">
-            <strong>シナリオの目標</strong>
+            <strong>登場人物</strong>
             <button type="button">初期化</button>
             <button type="button">追加</button>
           </div>
-          <textarea spellcheck="false">goal:
-  - target: シナリオ1
-    use_flag: false
-    checkpoint:
-      - display_name: 条件1
-        status: false
-      - display_name: 条件2
-        status: false</textarea>
-        </section>
+          <textarea spellcheck="false">
+【ベースの登場人物】
+[player]: 黒羽　究也：カッコウ医院の先生
+[main]: 白井　結：ヒロイン
+[sub]: 白井　圭太：白井　結の夫
+[mob]: 
+          </textarea>
+        </div>
 
-        <section class="box message-box">
-          <div class="box-header">
-            <strong>物語の開始メッセージ</strong>
-          </div>
-          <textarea spellcheck="false"></textarea>
-        </section>
-
-        <section class="scenario-section">
+        <div class="scenario-section">
           <div class="section-title">シナリオ</div>
 
           <label class="yaml-block">
@@ -97,31 +86,59 @@
             <textarea spellcheck="false"></textarea>
           </label>
 
-          <label class="yaml-block">
-            <span>目的</span>
-            <textarea spellcheck="false"></textarea>
-          </label>
+          <div class="bottom-two">
+            <label class="yaml-block">
+              <span>目的</span>
+              <textarea spellcheck="false"></textarea>
+            </label>
 
-          <label class="yaml-block">
-            <span>補足</span>
-            <textarea spellcheck="false"></textarea>
-          </label>
-        </section>
-
-        <section class="box params-box">
-          <div class="box-header">
-            <strong>シナリオパラメータ</strong>
-            <button type="button">初期化</button>
-            <button type="button">追加</button>
+            <label class="yaml-block">
+              <span>補足</span>
+              <textarea spellcheck="false"></textarea>
+            </label>
           </div>
-          <textarea spellcheck="false">dynamic_params:
+        </div>
+
+        <div class="right-stack">
+          <div class="box goal-box">
+            <div class="box-header">
+              <strong>シナリオの目標</strong>
+              <button type="button">初期化</button>
+              <button type="button">追加</button>
+            </div>
+            <textarea spellcheck="false">goal:
+  - target: シナリオ1
+    use_flag: false
+    checkpoint:
+      - display_name: 条件1
+        status: false
+      - display_name: 条件2
+        status: false</textarea>
+          </div>
+
+          <div class="box message-box">
+            <div class="box-header">
+              <strong>シナリオパラメータ</strong>
+              <button type="button">初期化</button>
+              <button type="button">追加</button>
+            </div>
+            <textarea spellcheck="false">dynamic_params:
   - target: 白井 結
     param_data:
       - display_name: ユーザーへの好感度
         count: 0
       - display_name: 旦那への好感度
-        count: 100</textarea>
-        </section>
+        count: 100
+            </textarea>
+          </div>
+
+          <div class="box params-box">
+            <div class="box-header">
+              <strong>開始メッセージ</strong>
+            </div>
+            <textarea spellcheck="false"></textarea>
+          </div>
+        </div>
       </section>
 
       <footer class="world-footer">
