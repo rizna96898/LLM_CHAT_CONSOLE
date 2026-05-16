@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ローカルLLM チャット上物モック 3カラム</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --panel: #ffffff;
+      --panel-soft: #f7f8fb;
+      --line: #cfd6df;
+      --text: #20242a;
+      --muted: #66707c;
+      --accent: #4f7cff;
+      --danger: #d94a4a;
+      --shadow: 0 8px 24px rgba(20, 30, 50, 0.12);
+      --top-height: 52px;
+      --toolbar-height: 44px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    button, select, input, textarea { font: inherit; }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      min-height: var(--top-height);
+      display: grid;
+      grid-template-columns: repeat(8, auto) minmax(0, 1fr) auto;
+      grid-template-rows: 42px var(--top-height);
+      align-items: center;
+      gap: 0 8px;
+      padding: 0 10px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+      z-index: 10;
+      overflow: hidden;
+      transition: grid-template-rows 0.18s ease;
+    }
+
+    .top-control,
+    .top-note {
+      grid-row: 1;
+    }
+
+    .system-summary {
+      grid-row: 2;
+      grid-column: 1 / 10;
+    }
+
+    #toggleTop {
+      grid-row: 2;
+      grid-column: 10;
+    }
+
+    .topbar.collapsed {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: var(--top-height);
+    }
+
+    .topbar.collapsed .top-control,
+    .topbar.collapsed .top-note {
+      display: none;
+    }
+
+    .topbar.collapsed .system-summary {
+      grid-row: 1;
+      grid-column: 1;
+    }
+
+    .topbar.collapsed #toggleTop {
+      grid-row: 1;
+      grid-column: 2;
+    }
+
+    .topbar.collapsed:hover,
+    .topbar.menu-open {
+      grid-template-columns: repeat(8, auto) minmax(0, 1fr) auto;
+      grid-template-rows: 42px var(--top-height);
+    }
+
+    .topbar.collapsed:hover .top-control,
+    .topbar.collapsed:hover .top-note,
+    .topbar.menu-open .top-control,
+    .topbar.menu-open .top-note {
+      display: flex;
+    }
+
+    .topbar.collapsed:hover .system-summary,
+    .topbar.menu-open .system-summary {
+      grid-row: 2;
+      grid-column: 1 / 10;
+    }
+
+    .topbar.collapsed:hover #toggleTop,
+    .topbar.menu-open #toggleTop {
+      grid-row: 2;
+      grid-column: 10;
+    }
+
+    .system-summary {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .system-summary strong { font-size: 14px; }
+    .system-base{ color: var(--text); }
+
+    .top-control {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 86px;
+      font-size: 12px;
+      line-height: 1.1;
+    }
+
+    .top-control select,
+    .top-control button {
+      height: 24px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      cursor: pointer;
+    }
+
+    .top-note {
+      min-width: 0;
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      height: 32px;
+      min-width: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      cursor: pointer;
+    }
+
+    .icon-button:hover,
+    .top-control button:hover,
+    .tool-button:hover,
+    .mini-button:hover { border-color: var(--accent); }
+
+    /* 3カラム本体 */
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns:
+        3.6fr
+        10px
+        3fr
+        10px
+        3.4fr;
+      /* grid-template-columns: 
+        minmax(360px, 38%) 10px
+        minmax(300px, 30%) 10px
+        minmax(280px, 26%);
+      gap: 0; */
+      padding: 10px;
+    }
+
+    .splitter {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .splitter::before {
+      content: "";
+      width: 2px;
+      background: #aeb7c4;
+      border-radius: 999px;
+    }
+
+    .chat-area,
+    .standee-area,
+    .side-area {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .chat-area { grid-template-rows: 1fr 66px minmax(86px, auto); }
+    .standee-area { grid-template-rows: 1fr; }
+    .side-area { grid-template-rows: 1fr 1fr; }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .panel-header strong { color: var(--text); font-size: 14px; }
+    .panel-tools { display: flex; gap: 4px; }
+
+    .mini-button {
+      height: 22px;
+      min-width: 24px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .panel-body {
+      min-height: 0;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .chat-log {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d7def0, #ffffff);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bubble {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .bubble .name { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+
+    .parameter-strip {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .input-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: 1fr var(--toolbar-height);
+      overflow: hidden;
+    }
+
+    .chat-input {
+      min-height: 52px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .bottom-tools {
+      display: grid;
+      grid-template-columns: repeat(5, auto) 1fr;
+      gap: 6px;
+      align-items: center;
+      padding: 5px 6px;
+      background: var(--panel-soft);
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+    }
+
+    .tool-button {
+      height: 32px;
+      min-width: 70px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .tool-button.primary {
+      border-color: var(--accent);
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .standee-stage,
+    .image-stage,
+    .world-stage {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .standee-box {
+      height: min(96%, 860px);
+      width: auto;
+      max-width: 94%;
+      aspect-ratio: 2 / 3;
+      border: 1px dashed #aeb7c4;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .image-box {
+      width: min(92%, 680px);
+      aspect-ratio: 16 / 9;
+      border: 1px dashed #aeb7c4;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .settings-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .settings-session-pane,
+    .settings-model-pane {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+    }
+
+    .settings-pane-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .settings-pane-title strong {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .session-table {
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .session-table-header,
+    .session-row {
+      display: grid;
+      grid-template-columns: 1fr 86px 28px;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e4e9f0;
+      font-size: 12px;
+    }
+
+    .session-table-header {
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .session-list {
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .session-row {
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .session-row:hover { background: #f7f9ff; }
+    .session-row.active { background: #eef4ff; }
+    .session-row:last-child { border-bottom: 0; }
+
+    .session-name {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .session-icon {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .session-delete {
+      width: 24px;
+      height: 24px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      opacity: 0;
+    }
+
+    .session-row:hover .session-delete { opacity: 1; }
+    .session-delete:hover {
+      border-color: var(--danger);
+      color: #fff;
+      background: var(--danger);
+    }
+
+    .new-session-button {
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .settings-form {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .setting-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .mini-input,
+    .setting-field select {
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #fff;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      display: inline-block;
+    }
+
+    .toggle-switch input { display: none; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #cfd6df;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(24px); }
+
+    .world-list {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .world-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .world-card strong { display: block; margin-bottom: 4px; }
+
+    .world-card.active {
+      border-color: var(--accent);
+      background: #f2f6ff;
+    }
+
+    .app.world-open,
+    .app.character-open,
+    .app.settings-open,
+    .app.player-open,
+    .app.tag-manager-open { grid-template-rows: auto 1fr; }
+
+    .app.world-open .workspace,
+    .app.character-open .workspace,
+    .app.settings-open .workspace,
+    .app.player-open .workspace,
+    .app.tag-manager-open .workspace { display: none; }
+
+    .world-overlay,
+    .character-overlay,
+    .settings-overlay,
+    .player-overlay,
+    .tag-manager-window {
+      min-height: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .world-overlay.hidden,
+    .character-overlay.hidden,
+    .settings-overlay.hidden,
+    .player-overlay.hidden,
+    .tag-manager-window.hidden { display: none; }
+
+    .world-overlay-header,
+    .character-overlay-header,
+    .settings-overlay-header,
+    .player-overlay-header,
+    .tag-manager-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .world-frame,
+    .character-frame,
+    .settings-frame,
+    .player-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    .tag-manager-window { grid-template-rows: 38px auto 1fr 44px; }
+
+    .tag-manager-controls {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: minmax(260px, 420px) auto 1fr;
+      grid-template-rows: auto auto;
+      gap: 8px 10px;
+      align-items: center;
+    }
+
+    .tag-manager-controls input {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 10px;
+      background: #fff;
+    }
+
+    .tag-register-input { grid-column: 1; grid-row: 1; }
+    .tag-add-button { grid-column: 2; grid-row: 1; height: 34px; padding: 0 14px; }
+    .tag-filter-input { grid-column: 1 / span 2; grid-row: 2; }
+    .tag-manager-help { grid-column: 3; grid-row: 1 / span 2; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    .tag-manager-body {
+      padding: 16px;
+      display: flex;
+      align-content: flex-start;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
+      overflow: auto;
+      background: #fff;
+    }
+
+    .tag-master-row {
+      display: inline-grid;
+      grid-template-columns: 28px auto auto auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-soft);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .tag-icon {
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .tag-manager-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--panel-soft);
+      border-top: 1px solid var(--line);
+    }
+
+    .floating-menu {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      width: 320px;
+      max-width: calc(100vw - 28px);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    .floating-menu.hidden { display: none; }
+    .floating-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--panel-soft); border-bottom: 1px solid var(--line); font-size: 13px; cursor: default; }
+    .floating-body { padding: 10px; display: grid; gap: 8px; font-size: 13px; }
+    .setting-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 8px; }
+    .setting-row select,
+    .setting-row button { height: 30px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+
+    @media (max-width: 1200px) {
+      body { overflow: auto; }
+      .app { min-height: 100vh; height: auto; }
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        overflow: visible;
+      }
+      .splitter { display: none; }
+      .chat-area, .standee-area, .side-area { min-height: 520px; }
+      .side-area { grid-template-rows: 360px 360px; }
+    }
+
+    @media (max-width: 1000px) {
+      .topbar { grid-template-columns: 1fr auto auto; }
+      .top-control, .top-note { display: none; }
+    }
+    .popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.25);
+      display: grid;
+      place-items: center;
+      z-index: 100;
+    }
+
+    .popup-overlay.hidden {
+      display: none;
+    }
+
+    .popup-window {
+      width: 720px;
+      max-width: calc(100vw - 40px);
+      height: 520px;
+      max-height: calc(100vh - 40px);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: 38px 1fr;
+      overflow: hidden;
+    }
+
+    .popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .popup-body {
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .world-select-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .world-select-table th,
+    .world-select-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .world-select-table tbody tr {
+      cursor: pointer;
+    }
+
+    .world-select-table tbody tr:hover {
+      background: #eef4ff;
+    }
+    .session-row.active {
+      background: #dff3df;
+    }
+
+    .status-wait {
+      color: #5b7fd6;
+    }
+
+    .status-ok {
+      color: #2ea043;
+    }
+
+    .status-error {
+      color: #d94a4a;
+    }
+  </style>
+</head>
+<body>
+  <div id="topMessage" class="top-message"></div>
+  <div class="app" id="app">
+    <header class="topbar collapsed" id="topbar">
+      <div class="top-control"><span>言語選択</span><select><option>日本語</option><option>English</option></select></div>
+      <div class="top-control"><span>ラベル ON/OFF</span><button type="button">ON</button></div>
+      <div class="top-control"><span>画面レイアウト</span><button type="button" id="layoutToggleTop">切替</button></div>
+      <div class="top-control"><span>接続環境設定</span><button type="button" id="settingsToggleButton">設定</button></div>
+      <div class="top-control"><span>プレイヤー設定</span><button type="button" id="playerToggleButton">プレイヤー設定</button></div>
+      <div class="top-control"><span>タグ管理</span><button type="button" id="tagManageButton">タグ</button></div>
+      <div class="top-control"><span>世界</span><button type="button" id="worldToggleButton">ON</button></div>
+      <div class="top-control"><span>キャラ</span><button type="button" id="characterToggleButton">キャラクター</button></div>
+      <div class="top-note">3カラム版。左: チャット / 中: 立ち絵 / 右: 設定・ワールド。</div>
+      <div class="system-summary">
+        <strong id="summaryScenario" class="system-base">選択中世界: カッコウ医院</strong>
+        <strong id="summaryServer" class="system-base">サーバー：</strong>
+        <strong id="summaryServerStatus" class="status-wait">－確認待ち</strong>
+        <button id="summaryCheck" class="system-base">確認</button>
+        <strong id="summaryLlm" class="system-base">使用モデル： Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf</strong>
+        <strong id="summaryImage" class="system-base">画像:</strong>
+        <strong id="summaryImageStatus" class="status-wait">－確認待ち</strong>
+      </div>
+      <button class="icon-button" type="button" id="toggleTop">ロック</button>
+    </header>
+
+    <section class="world-overlay hidden" id="worldOverlay">
+      <div class="world-overlay-header"><strong>世界カード</strong><div><button class="mini-button" type="button" id="openWorldWindow">別窓</button><button class="mini-button" type="button" id="closeWorldOverlay">×</button></div></div>
+      <iframe class="world-frame" src="world.html" title="世界カード"></iframe>
+    </section>
+
+    <section class="character-overlay hidden" id="characterOverlay">
+      <div class="character-overlay-header"><strong>キャラクターカード</strong><div><button class="mini-button" type="button" id="openCharacterWindow">別窓</button><button class="mini-button" type="button" id="closeCharacterOverlay">×</button></div></div>
+      <iframe class="character-frame" src="character.html" title="キャラクターカード"></iframe>
+    </section>
+
+    <section class="settings-overlay hidden" id="settingsOverlay">
+      <div class="settings-overlay-header"><h2 id="settingsTitle">設定</h2><div><button class="mini-button" type="button" id="openSettingsWindow">別窓</button><button class="mini-button" type="button" id="closeSettingsOverlay">×</button></div></div>
+      <iframe class="settings-frame" src="settings.html" title="設定"></iframe>
+    </section>
+
+    <section class="player-overlay hidden" id="playerOverlay">
+      <div class="player-overlay-header"><strong>プレイヤー設定</strong><div><button class="mini-button" type="button" id="openPlayerWindow">別窓</button><button class="mini-button" type="button" id="closePlayerOverlay">×</button></div></div>
+      <iframe class="player-frame" src="player.html" title="プレイヤー設定"></iframe>
+    </section>
+
+    <section class="tag-manager-window hidden" id="tagManagerWindow">
+      <div class="tag-manager-header"><strong>タグ管理</strong><button class="mini-button" type="button" id="closeTagManager">×</button></div>
+      <div class="tag-manager-controls">
+        <input class="tag-register-input" type="text" placeholder="登録するタグ名" />
+        <button class="tag-add-button mini-button" type="button">登録</button>
+        <input class="tag-filter-input" type="text" placeholder="フィルター（入力したら下を絞り込み）" />
+        <div class="tag-manager-help">タグ名とアイコンを管理する画面。キャラ側では、この一覧から複数選択する想定。</div>
+      </div>
+      <div class="tag-manager-body">
+        <div class="tag-master-row"><span class="tag-icon">女</span><strong>女子高生</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
+        <div class="tag-master-row"><span class="tag-icon">学</span><strong>学生</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
+        <div class="tag-master-row"><span class="tag-icon">医</span><strong>医療</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
+        <div class="tag-master-row"><span class="tag-icon">家</span><strong>白井家</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
+      </div>
+      <div class="tag-manager-footer"><button class="mini-button" type="button">登録／更新</button><button class="mini-button" type="button" id="closeTagManagerFooter">閉じる</button></div>
+    </section>
+
+    <main class="workspace" id="workspace">
+      <section class="chat-area">
+        <section class="panel">
+          <div class="panel-header"><strong>チャットログ</strong><div class="panel-tools"><button class="mini-button" type="button">−</button><button class="mini-button" type="button">□</button></div></div>
+          <div class="panel-body chat-log">
+            <div class="message"><div class="avatar">結</div><div class="bubble"><div class="name">白井 結</div>ここに会話ログが入ります。3カラム版なので左幅は少し狭めです。</div></div>
+            <div class="message"><div class="avatar">医</div><div class="bubble"><div class="name">プレイヤー</div>中央の立ち絵を大きく見せつつ、右側に設定とワールド情報を置く想定です。</div></div>
+          </div>
+        </section>
+
+        <section class="parameter-strip">キャラパラメータ枠<br />喋ったキャラと連動 / 世界カードON/OFF指定</section>
+
+        <section class="input-panel">
+          <textarea class="chat-input" placeholder="チャット入力枠"></textarea>
+          <div class="bottom-tools">
+            <button class="tool-button" type="button" id="newChatButton">新規チャット</button>
+            <button class="tool-button" type="button">再送</button>
+            <button class="tool-button primary" type="button">発言</button>
+            <button class="tool-button" type="button">持ち物</button>
+            <button class="tool-button" type="button">ステータス</button>
+            <span style="color: var(--muted);">ショートカット設定・クリア条件などは後で追加</span>
+          </div>
+        </section>
+      </section>
+
+      <div class="splitter" aria-hidden="true"></div>
+
+      <section class="standee-area">
+        <section class="panel">
+          <div class="panel-header"><strong>発言キャラクター立ち絵</strong></div>
+          <div class="panel-body standee-stage">
+            <div class="standee-box">発言キャラクター立ち絵
+          </div>
+        </section>
+      </section>
+
+      <div class="splitter" aria-hidden="true"></div>
+
+      <section class="side-area">
+        <section class="panel">
+          <div class="panel-header"><strong>設定</strong></div>
+          <div class="panel-body settings-body">
+            <div class="settings-session-pane">
+              <div class="settings-pane-title">
+                <strong>セッション選択</strong>
+                <button class="new-session-button" type="button">★ 全削除</button>
+              </div>
+
+              <div class="session-table">
+                <div class="session-table-header">
+                  <span>表示名</span>
+                  <span>更新</span>
+                  <span></span>
+                </div>
+                <div class="session-list" id="sessionList"></div>
+              </div>
+            </div>
+
+            <div class="settings-model-pane">
+              <div class="settings-pane-title">
+                <strong>世界・モデル設定</strong>
+              </div>
+
+              <div class="settings-form">
+                <div class="setting-field"><label>世界選択</label>
+                  <button type="button" class="tool-button" id="worldSelectButton">
+                    世界選択
+                  </button>
+                </div>
+                <div class="setting-field"><label>temperature</label><input type="text" value="0.8" class="mini-input" /></div>
+                <div class="setting-field"><label>max_tokens</label><input type="text" value="300" class="mini-input" /></div>
+                <div class="setting-field"><label>画像生成</label><label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+                <div class="setting-field"><label>OpenRouter補助</label><label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><strong>返信生成結果画像</strong></div>
+          <div class="image-stage">
+            <div class="image-box">
+              返信画像
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <aside class="floating-menu hidden" id="floatingMenu">
+    <div class="floating-header"><strong>レイアウト・表示設定</strong><button class="mini-button" type="button" id="closeFloat">×</button></div>
+    <div class="floating-body">
+      <div class="setting-row"><span>上部メニュー</span><button type="button" id="toggleTopFromFloat">開閉</button></div>
+      <div class="setting-row"><span>右側表示</span><select><option>設定 / ワールド</option><option>画像 / ワールド</option><option>設定のみ</option></select></div>
+    </div>
+  </aside>
+  <div id="worldSelectPopup" class="popup-overlay hidden">
+    <div class="popup-window">
+      <div class="popup-header">
+        <strong>世界選択</strong>
+        <button type="button" id="closeWorldSelectPopup">×</button>
+      </div>
+
+      <div class="popup-body">
+        <table class="world-select-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名前</th>
+            </tr>
+          </thead>
+          <tbody id="worldSelectTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    const app = document.getElementById('app');
+    const topbar = document.getElementById('topbar');
+    const toggleTop = document.getElementById('toggleTop');
+    const toggleTopFromFloat = document.getElementById('toggleTopFromFloat');
+    const layoutToggleTop = document.getElementById('layoutToggleTop');
+    const floatingMenu = document.getElementById('floatingMenu');
+    const closeFloat = document.getElementById('closeFloat');
+    const worldToggleButton = document.getElementById('worldToggleButton');
+    const worldOverlay = document.getElementById('worldOverlay');
+    const closeWorldOverlay = document.getElementById('closeWorldOverlay');
+    const openWorldWindow = document.getElementById('openWorldWindow');
+    const characterToggleButton = document.getElementById('characterToggleButton');
+    const characterOverlay = document.getElementById('characterOverlay');
+    const closeCharacterOverlay = document.getElementById('closeCharacterOverlay');
+    const openCharacterWindow = document.getElementById('openCharacterWindow');
+    const tagManageButton = document.getElementById('tagManageButton');
+    const tagManagerWindow = document.getElementById('tagManagerWindow');
+    const closeTagManager = document.getElementById('closeTagManager');
+    const closeTagManagerFooter = document.getElementById('closeTagManagerFooter');
+    const settingsToggleButton = document.getElementById('settingsToggleButton');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
+    const openSettingsWindow = document.getElementById('openSettingsWindow');
+    const characterFrame = document.querySelector('.character-frame');
+    const playerToggleButton = document.getElementById('playerToggleButton');
+    const playerOverlay = document.getElementById('playerOverlay');
+    const closePlayerOverlay = document.getElementById('closePlayerOverlay');
+    const openPlayerWindow = document.getElementById('openPlayerWindow');
+
+    function closeAllOverlays() {
+      worldOverlay.classList.add('hidden');
+      characterOverlay.classList.add('hidden');
+      tagManagerWindow.classList.add('hidden');
+      settingsOverlay.classList.add('hidden');
+      playerOverlay.classList.add('hidden');
+      app.classList.remove('world-open', 'character-open', 'tag-manager-open', 'settings-open', 'player-open');
+    }
+
+    function setOverlay(open, overlay, className) {
+      if (open) closeAllOverlays();
+      overlay.classList.toggle('hidden', !open);
+      app.classList.toggle(className, open);
+    }
+
+    function reloadCharacterFrame() {
+      if (!characterFrame) return;
+      characterFrame.src = `character.html?reload=${Date.now()}`;
+    }
+
+    function setTopCollapsed(collapsed) {
+      topbar.classList.toggle('collapsed', collapsed);
+      topbar.classList.remove('menu-open');
+      toggleTop.textContent = collapsed ? 'ロック' : '解除';
+    }
+
+    toggleTop.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
+    topbar.addEventListener('mouseenter', () => { if (topbar.classList.contains('collapsed')) topbar.classList.add('menu-open'); });
+    topbar.addEventListener('mouseleave', () => topbar.classList.remove('menu-open'));
+    toggleTopFromFloat.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
+    layoutToggleTop.addEventListener('click', () => floatingMenu.classList.toggle('hidden'));
+    closeFloat.addEventListener('click', () => floatingMenu.classList.add('hidden'));
+
+    worldToggleButton.addEventListener('click', () => setOverlay(worldOverlay.classList.contains('hidden'), worldOverlay, 'world-open'));
+    closeWorldOverlay.addEventListener('click', () => setOverlay(false, worldOverlay, 'world-open'));
+    openWorldWindow.addEventListener('click', () => window.open('world.html', 'worldCard'));
+
+    characterToggleButton.addEventListener('click', () => { reloadCharacterFrame(); setOverlay(characterOverlay.classList.contains('hidden'), characterOverlay, 'character-open'); });
+    closeCharacterOverlay.addEventListener('click', () => setOverlay(false, characterOverlay, 'character-open'));
+    openCharacterWindow.addEventListener('click', () => window.open('character.html', 'characterCard'));
+
+    settingsToggleButton.addEventListener('click', () => setOverlay(settingsOverlay.classList.contains('hidden'), settingsOverlay, 'settings-open'));
+    closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsOverlay, 'settings-open'));
+    openSettingsWindow.addEventListener('click', () => window.open('settings.html', 'settingsWindow'));
+
+    playerToggleButton.addEventListener('click', () => setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'));
+    closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
+    openPlayerWindow.addEventListener('click', () => window.open('player.html', 'playerWindow'));
+
+    tagManageButton.addEventListener('click', () => setOverlay(tagManagerWindow.classList.contains('hidden'), tagManagerWindow, 'tag-manager-open'));
+    closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
+    closeTagManagerFooter.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
+
+    window.addEventListener('message', (event) => {
+      if (!event.data || event.data.type !== 'settings_applied') return;
+      const title = document.getElementById('settingsTitle');
+      if (!title) return;
+      const original = title.textContent;
+      title.textContent = event.data.message;
+      title.style.color = '#0f7a2f';
+      setTimeout(() => { title.textContent = original; title.style.color = ''; }, 2000);
+    });
+
+    const worldSelectButton = document.getElementById("worldSelectButton");
+    const worldSelectPopup = document.getElementById("worldSelectPopup");
+    const closeWorldSelectPopup = document.getElementById("closeWorldSelectPopup");
+    const worldSelectTableBody = document.getElementById("worldSelectTableBody");
+    const sessionList = document.getElementById("sessionList");
+    const newChatButton = document.getElementById("newChatButton");
+
+    function getWorldList() {
+      try {
+        return JSON.parse(localStorage.getItem("world_list") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function getSessionList() {
+      try {
+        return JSON.parse(localStorage.getItem("session_list") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSessionList(sessions) {
+      localStorage.setItem("session_list", JSON.stringify(Array.isArray(sessions) ? sessions : []));
+    }
+
+    function upsertSessionList(session) {
+      if (!session || !session.session_id) return getSessionList();
+
+      const sessions = getSessionList();
+      const index = sessions.findIndex(item => item.session_id === session.session_id);
+
+      if (index >= 0) {
+        sessions[index] = { ...sessions[index], ...session };
+      } else {
+        sessions.unshift(session);
+      }
+
+      saveSessionList(sessions);
+      return sessions;
+    }
+
+    function applySelectedSession(session) {
+      if (!session) return;
+
+      localStorage.setItem("selected_world_id", session.world_id || "");
+      localStorage.setItem("selected_world_name", session.world_name || "");
+      localStorage.setItem("selected_session_id", session.session_id || "");
+      localStorage.setItem("selected_session_name", session.display_name || "");
+
+      const scenario = document.querySelector("#summaryScenario");
+      if (scenario) {
+        scenario.textContent = "選択中世界: " + (session.world_name || "未選択");
+      }
+    }
+
+    function buildSessionFromNewChatResult(result, fallbackWorldId, fallbackWorldName) {
+      const sessionId = result.session_id || result.selected_session_id || "";
+      const worldId = result.world_id || fallbackWorldId || "";
+      const worldName = result.world_name || fallbackWorldName || "";
+      const displayName =
+        result.session_name ||
+        result.selected_session_name ||
+        result.display_name ||
+        worldName ||
+        "名称未設定";
+
+      return {
+        session_id: sessionId,
+        world_id: worldId,
+        world_name: worldName,
+        display_name: displayName,
+        updated_at: result.updated_at || ""
+      };
+    }
+
+    function formatSessionUpdatedAt(value) {
+      if (!value) return "";
+      // ひとまずサーバー文字列をそのまま表示。
+      // 後で「昨日」「5/06」などに寄せるならここだけ修正する。
+      return value;
+    }
+
+    function clearSessionList() {
+      if (!sessionList) return;
+      sessionList.innerHTML = "";
+    }
+
+    function renderSessionList(sessions, selectedSessionId) {
+      clearSessionList();
+
+      if (!Array.isArray(sessions) || sessions.length === 0) {
+        return;
+      }
+
+      sessions.forEach(session => {
+        const row = document.createElement("div");
+        row.className = "session-row";
+        row.dataset.sessionId = session.session_id || "";
+
+        if (selectedSessionId && session.session_id === selectedSessionId) {
+          row.classList.add("active");
+        }
+
+        const iconText = session.world_name ? session.world_name.slice(0, 1) : "世";
+        const displayName = session.display_name || "名称未設定";
+        const updatedAt = formatSessionUpdatedAt(session.updated_at);
+
+        row.innerHTML = `
+          <div class="session-name">
+            <span class="session-icon">${iconText}</span>
+            <span>${displayName}</span>
+          </div>
+          <span>${updatedAt}</span>
+          <button class="session-delete" type="button" title="削除">×</button>
+        `;
+
+        row.addEventListener("click", () => {
+          document.querySelectorAll(".session-row.active").forEach(activeRow => {
+            activeRow.classList.remove("active");
+          });
+          row.classList.add("active");
+          localStorage.setItem("selected_world_id", session.world_id || "");
+          localStorage.setItem("selected_world_name", session.world_name || "");
+          localStorage.setItem("selected_session_id", session.session_id || "");
+          localStorage.setItem("selected_session_name", displayName);
+
+          const scenario = document.querySelector("#summaryScenario");
+          if (scenario) {
+            scenario.textContent = "選択中世界: " + (session.world_name || "未選択");
+          }
+        });
+
+        const deleteButton = row.querySelector(".session-delete");
+        if (deleteButton) {
+          deleteButton.addEventListener("click", event => {
+            event.stopPropagation();
+            // 削除APIは後で実装。今は誤爆防止で何もしない。
+            console.log("delete session clicked:", session.session_id);
+          });
+        }
+
+        sessionList.appendChild(row);
+
+      });
+    }
+
+    async function postWorldStart(world) {
+      const FLASK_BASE_URL = "http://127.0.0.1:5000";
+      const response = await fetch(FLASK_BASE_URL + "/world_start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          world_id: world.id,
+          world_name: world.name,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.result !== "ok") {
+        throw new Error(result.message || "world_start に失敗しました");
+      }
+      return result;
+    }
+
+    async function postNewChat() {
+      const FLASK_BASE_URL = "http://127.0.0.1:5000";
+      const worldId = localStorage.getItem("selected_world_id") || "";
+      const worldName = localStorage.getItem("selected_world_name") || "";
+
+      if (!worldId) {
+        alert("先に世界を選択してください");
+        return;
+      }
+
+      if (newChatButton) {
+        newChatButton.disabled = true;
+        newChatButton.textContent = "作成中";
+      }
+
+      try {
+        const response = await fetch(FLASK_BASE_URL + "/chat_startup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            world_id: worldId,
+            world_name: worldName,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "ok") {
+          throw new Error(result.message || "新規セッション作成に失敗しました");
+        }
+
+        const session = buildSessionFromNewChatResult(result, worldId, worldName);
+
+        if (!session.session_id) {
+          throw new Error("session_id が返ってきませんでした");
+        }
+
+        applySelectedSession(session);
+
+        const sessions = Array.isArray(result.sessions)
+          ? result.sessions
+          : upsertSessionList(session);
+
+        if (Array.isArray(result.sessions)) {
+          saveSessionList(result.sessions);
+        }
+
+        renderSessionList(sessions, session.session_id);
+        resetMainView();
+        applySelectedSession(session);
+
+      } catch (error) {
+        console.error(error);
+        alert(error.message);
+      } finally {
+        if (newChatButton) {
+          newChatButton.disabled = false;
+          newChatButton.textContent = "新規チャット";
+        }
+      }
+    }
+
+    function openWorldSelectPopup() {
+      const worlds = getWorldList();
+
+      worldSelectTableBody.innerHTML = "";
+
+      worlds.forEach(world => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${world.id}</td>
+          <td>${world.name}</td>
+        `;
+
+        tr.addEventListener("click", async () => {
+          try {
+            worldSelectPopup.classList.add("hidden");
+
+            const result = await postWorldStart(world);
+
+            resetMainView();
+
+            localStorage.setItem("selected_world_id", result.world_id || world.id);
+            localStorage.setItem("selected_world_name", result.world_name || world.name);
+            localStorage.setItem("selected_session_id", result.selected_session_id || "");
+            localStorage.setItem("selected_session_name", result.selected_session_name || "");
+            const scenario = document.querySelector("#summaryScenario");
+            if (scenario) scenario.innerHTML  = "選択中世界: " + (result.world_name || world.name);
+
+            if (Array.isArray(result.sessions)) {
+              saveSessionList(result.sessions);
+            }
+
+            renderSessionList(result.sessions || getSessionList(), result.selected_session_id);
+          } catch (error) {
+            console.error(error);
+            alert(error.message);
+          }
+        });
+
+        worldSelectTableBody.appendChild(tr);
+      });
+
+      worldSelectPopup.classList.remove("hidden");
+    }
+
+    worldSelectButton.addEventListener("click", openWorldSelectPopup);
+
+    if (newChatButton) {
+      newChatButton.addEventListener("click", postNewChat);
+    }
+
+    closeWorldSelectPopup.addEventListener("click", () => {
+      worldSelectPopup.classList.add("hidden");
+    });
+    function resetMainView() {
+      const chatLog = document.querySelector(".chat-log");
+      const standeeBox = document.querySelector(".standee-box");
+      const worldList = document.querySelector(".world-list");
+      const parameterStrip = document.querySelector(".parameter-strip");
+      const chatInput = document.querySelector(".chat-input");
+      const scenario = document.querySelector("#summaryScenario");
+      const server = document.querySelector("#summaryServer");
+      const serverStatus = document.querySelector("#summaryServerStatus");
+      const character = document.querySelector("#summaryCharacter");
+      const llm = document.querySelector("#summaryLlm");
+      const summaryImage = document.querySelector("#summaryImage");
+      const summaryImageStatus = document.querySelector("#summaryImageStatus");
+
+      if (chatLog) chatLog.innerHTML = "";
+      if (standeeBox) standeeBox.innerHTML = "発言キャラクター立ち絵";
+      if (worldList) {
+        worldList.innerHTML = `
+          <div class="image-stage">
+            <div class="image-box">
+              返信画像<br>
+              ここに小さめプレビューや生成状態を置いても良さそうです。
+            </div>
+          </div>
+        `;
+      }
+      if (parameterStrip) parameterStrip.innerHTML = "キャラパラメータ枠<br />喋ったキャラと連動 / 世界カードON/OFF指定";
+      if (chatInput) chatInput.innerHTML  = "";
+      if (scenario) scenario.innerHTML  = "選択中世界: ";
+      if (server) server.innerHTML  = "サーバー： ";
+      if (serverStatus) serverStatus.innerHTML  = "－確認待ち";
+      if (llm) llm.innerHTML  = "使用モデル: Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf";
+      if (summaryImage) summaryImage.innerHTML  = "画像作成中: ";
+      if (summaryImageStatus) summaryImageStatus.innerHTML  = "－確認待ち";
+    }
+    function initializeMainViewFromLocalStorage() {
+      resetMainView();
+
+      const worlds = getWorldList();
+      const selectedSessionId = localStorage.getItem("selected_session_id") || "";
+      const selectedWorldName = localStorage.getItem("selected_world_name") || "";
+
+      const sessions = getSessionList();
+
+      renderSessionList(sessions, selectedSessionId);
+
+      const scenario = document.querySelector("#summaryScenario");
+      if (scenario) {
+        scenario.textContent = "選択中世界: " + (selectedWorldName || "未選択");
+      }
+    }
+
+    initializeMainViewFromLocalStorage();
+
+    const summaryCheck = document.getElementById("summaryCheck");
+    const summaryServerStatus = document.getElementById("summaryServerStatus");
+
+    async function checkServerHealth() {
+      const FLASK_BASE_URL = "http://127.0.0.1:5000";
+
+      summaryServerStatus.textContent = "確認中...";
+      summaryServerStatus.className = "status-wait";
+
+      try {
+        const response = await fetch(FLASK_BASE_URL + "/health");
+
+        if (!response.ok) {
+          throw new Error("health request failed");
+        }
+
+        const result = await response.json();
+
+        if (result.status === "ok") {
+          summaryServerStatus.textContent = "●接続中";
+          summaryServerStatus.className = "status-ok";
+        } else {
+          summaryServerStatus.textContent = "×未接続";
+          summaryServerStatus.className = "status-error";
+        }
+
+      } catch (error) {
+        console.error(error);
+
+        summaryServerStatus.textContent = "×未接続";
+        summaryServerStatus.className = "status-error";
+      }
+    }
+
+    summaryCheck.addEventListener("click", checkServerHealth);
+  </script>
+</body>
+</html>

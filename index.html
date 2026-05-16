@@ -194,7 +194,7 @@
     }
 
     .right-area {
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 380px 1fr;
     }
 
     .panel {
@@ -462,6 +462,48 @@
       font-size: 13px;
     }
 
+    .app.player-open .workspace {
+      display: none;
+    }
+
+    .app.player-open .world-overlay,
+    .app.player-open .character-overlay,
+    .app.player-open .settings-overlay,
+    .app.player-open .tag-manager-window {
+      display: none;
+    }
+
+    .player-overlay {
+      min-height: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .player-overlay.hidden {
+      display: none;
+    }
+
+    .player-overlay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .player-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
     .settings-frame {
       width: 100%;
       height: 100%;
@@ -634,6 +676,76 @@
       background: #fff;
     }
 
+    .standee-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .standee-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 8px;
+      border-right: 1px solid var(--line);
+    }
+
+    .standee-menu-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .mini-input {
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #fff;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      display: inline-block;
+    }
+
+    .toggle-switch input {
+      display: none;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #cfd6df;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--accent);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(24px);
+    }
+
     @media (max-width: 1000px) {
       body {
         overflow: auto;
@@ -680,6 +792,67 @@
     .topbar.collapsed .top-note {
       display: none;
     }
+    .popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.25);
+      display: grid;
+      place-items: center;
+      z-index: 100;
+    }
+
+    .popup-overlay.hidden {
+      display: none;
+    }
+
+    .popup-window {
+      width: 720px;
+      max-width: calc(100vw - 40px);
+      height: 520px;
+      max-height: calc(100vh - 40px);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: 38px 1fr;
+      overflow: hidden;
+    }
+
+    .popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .popup-body {
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .world-select-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .world-select-table th,
+    .world-select-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .world-select-table tbody tr {
+      cursor: pointer;
+    }
+
+    .world-select-table tbody tr:hover {
+      background: #eef4ff;
+    }
   </style>
 </head>
 <body>
@@ -698,20 +871,20 @@
         <button type="button">ON</button>
       </div>
       <div class="top-control">
+        <span>画面レイアウト</span>
+        <button type="button" id="layoutToggleTop">切替</button>
+      </div>
+      <div class="top-control">
         <span>接続環境設定</span>
         <button type="button" id="settingsToggleButton">設定</button>
       </div>
       <div class="top-control">
         <span>プレイヤー設定</span>
-        <button type="button" id="playerSettingsToggleButton">プレイヤー設定</button>
+        <button type="button" id="playerToggleButton">プレイヤー設定</button>
       </div>
       <div class="top-control">
         <span>タグ管理</span>
         <button type="button" id="tagManageButton">タグ</button>
-      </div>
-      <div class="top-control">
-        <span>画面レイアウト</span>
-        <button type="button" id="layoutToggleTop">切替</button>
       </div>
       <div class="top-control">
         <span>世界</span>
@@ -824,7 +997,16 @@
     </div>
     <iframe class="settings-frame" src="settings.html" title="設定"></iframe>
   </section>
-
+  <section class="player-overlay hidden" id="playerOverlay">
+    <div class="player-overlay-header">
+      <strong>プレイヤー設定</strong>
+      <div>
+        <button class="mini-button" type="button" id="openPlayerWindow">別窓</button>
+        <button class="mini-button" type="button" id="closePlayerOverlay">×</button>
+      </div>
+    </div>
+    <iframe class="player-frame" src="player.html" title="プレイヤー設定"></iframe>
+  </section>
     <main class="workspace" id="workspace">
       <section class="left-area">
         <section class="panel">
@@ -876,12 +1058,57 @@
         <section class="panel">
           <div class="panel-header">
             <strong>キャラ立ち絵</strong>
-            <span>レスポンシブ / contain表示</span>
+            <span>世界・モデル設定</span>
           </div>
-          <div class="panel-body character-stage">
-            <div class="standee-box">
-              キャラ立ち絵<br />初期表示は枠内 contain<br />横サイズでも扱えるようにする
+
+          <div class="panel-body standee-layout">
+
+            <div class="standee-menu">
+
+              <div class="standee-menu-row">
+                <label>世界選択</label>
+                <button type="button" class="tool-button">
+                  世界選択
+                </button>
+              </div>
+
+              <div class="standee-menu-row">
+                <label>temperature</label>
+                <input
+                  type="text"
+                  value="0.8"
+                  class="mini-input"
+                />
+              </div>
+
+              <div class="standee-menu-row">
+                <label>max_tokens</label>
+                <input
+                  type="text"
+                  value="300"
+                  class="mini-input"
+                />
+              </div>
+
+              <div class="standee-menu-row">
+                <label>画像生成</label>
+
+                <label class="toggle-switch">
+                  <input type="checkbox" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
             </div>
+
+            <div class="character-stage">
+              <div class="standee-box">
+                キャラ立ち絵<br />
+                初期表示は枠内 contain<br />
+                横サイズでも扱えるようにする
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -936,7 +1163,26 @@
       </div>
     </div>
   </aside>
+  <div id="worldSelectPopup" class="popup-overlay hidden">
+    <div class="popup-window">
+      <div class="popup-header">
+        <strong>世界選択</strong>
+        <button type="button" id="closeWorldSelectPopup">×</button>
+      </div>
 
+      <div class="popup-body">
+        <table class="world-select-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名前</th>
+            </tr>
+          </thead>
+          <tbody id="worldSelectTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <script>
     const app = document.getElementById('app');
     const topbar = document.getElementById('topbar');
@@ -963,8 +1209,41 @@
     const settingsOverlay = document.getElementById('settingsOverlay');
     const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
     const openSettingsWindow = document.getElementById('openSettingsWindow');
-
     const characterFrame = document.querySelector('.character-frame');
+    const playerToggleButton = document.getElementById('playerToggleButton');
+    const playerOverlay = document.getElementById('playerOverlay');
+    const closePlayerOverlay = document.getElementById('closePlayerOverlay');
+    const openPlayerWindow = document.getElementById('openPlayerWindow');
+
+    function setPlayerOpen(open) {
+      playerOverlay.classList.toggle('hidden', !open);
+      app.classList.toggle('player-open', open);
+
+      if (open) {
+        worldOverlay.classList.add('hidden');
+        characterOverlay.classList.add('hidden');
+        tagManagerWindow.classList.add('hidden');
+        settingsOverlay.classList.add('hidden');
+
+        app.classList.remove('world-open');
+        app.classList.remove('character-open');
+        app.classList.remove('tag-manager-open');
+        app.classList.remove('settings-open');
+      }
+    }
+
+    playerToggleButton.addEventListener('click', () => {
+      setPlayerOpen(playerOverlay.classList.contains('hidden'));
+    });
+
+    closePlayerOverlay.addEventListener('click', () => {
+      setPlayerOpen(false);
+    });
+
+    openPlayerWindow.addEventListener('click', () => {
+      window.open('player.html', 'playerWindow');
+    });
+
     function reloadCharacterFrame() {
       if (!characterFrame) return;
       characterFrame.src = `character.html?reload=${Date.now()}`;
@@ -1039,6 +1318,8 @@
         characterOverlay.classList.add('hidden');
         tagManagerWindow.classList.add('hidden');
         settingsOverlay.classList.add('hidden');
+        playerOverlay.classList.add('hidden');
+        app.classList.remove('player-open');
         app.classList.remove('character-open');
         app.classList.remove('tag-manager-open');
         app.classList.remove('settings-open');
@@ -1053,6 +1334,8 @@
         worldOverlay.classList.add('hidden');
         tagManagerWindow.classList.add('hidden');
         settingsOverlay.classList.add('hidden');
+        playerOverlay.classList.add('hidden');
+        app.classList.remove('player-open');
         app.classList.remove('world-open');
         app.classList.remove('tag-manager-open');
         app.classList.remove('settings-open');
@@ -1092,6 +1375,8 @@
         worldOverlay.classList.add('hidden');
         characterOverlay.classList.add('hidden');
         settingsOverlay.classList.add('hidden');
+        playerOverlay.classList.add('hidden');
+        app.classList.remove('player-open');
         app.classList.remove('world-open');
         app.classList.remove('character-open');
         app.classList.remove('settings-open');
@@ -1118,6 +1403,8 @@
         worldOverlay.classList.add('hidden');
         characterOverlay.classList.add('hidden');
         tagManagerWindow.classList.add('hidden');
+        playerOverlay.classList.add('hidden');
+        app.classList.remove('player-open');
         app.classList.remove('world-open');
         app.classList.remove('character-open');
         app.classList.remove('tag-manager-open');
@@ -1154,6 +1441,53 @@
         title.textContent = original;
         title.style.color = "";
       }, 2000);
+    });
+    const worldSelectButton = document.getElementById("worldSelectButton");
+    const worldSelectPopup = document.getElementById("worldSelectPopup");
+    const closeWorldSelectPopup = document.getElementById("closeWorldSelectPopup");
+    const worldSelectTableBody = document.getElementById("worldSelectTableBody");
+
+    function getWorldList() {
+      try {
+        return JSON.parse(localStorage.getItem("world_list") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function openWorldSelectPopup() {
+      const worlds = getWorldList();
+
+      worldSelectTableBody.innerHTML = "";
+
+      worlds.forEach(world => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${world.world_id}</td>
+          <td>${world.world_name}</td>
+        `;
+
+        tr.addEventListener("click", () => {
+          localStorage.setItem("selected_world_id", world.world_id);
+          localStorage.setItem("selected_world_name", world.world_name);
+
+          // ここで画面の表示も更新
+          worldSelectButton.textContent = world.world_name;
+
+          worldSelectPopup.classList.add("hidden");
+        });
+
+        worldSelectTableBody.appendChild(tr);
+      });
+
+      worldSelectPopup.classList.remove("hidden");
+    }
+
+    worldSelectButton.addEventListener("click", openWorldSelectPopup);
+
+    closeWorldSelectPopup.addEventListener("click", () => {
+      worldSelectPopup.classList.add("hidden");
     });
   </script>
 </body>

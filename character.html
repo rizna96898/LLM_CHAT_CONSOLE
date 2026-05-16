@@ -299,7 +299,7 @@
       try {
         const baseChatPath = localStorage.getItem("base_chat_path") || "";
 
-        const res = await fetch("http://127.0.0.1:5000/settings/get_character_template_yaml", {
+        const res = await fetch("http://127.0.0.1:5000/settings/get_template_character_yaml", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"

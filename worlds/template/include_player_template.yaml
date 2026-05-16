@@ -1,0 +1,33 @@
+# 世界の初期設定。チャット中にキャラクターを召喚してもここは更新しない
+# 参照種別
+# playerは貴方。複数配置禁止
+# characterはキャラクターページで作成したid。登場させたいキャラクター
+# player、characterは表示名は使わない。カード情報から設定する
+# inlineはサブ・モブキャラクター。表示名でリストに追加
+# nullはリストに追加されない
+# 役割はplayer main sub mob。mobはチャット時キャラカード等は作らない
+# 職業は自由に記載
+
+世界の登場人物:
+  - 参照種別: player
+    参照ID: kyuya
+    表示名: null
+    役割: player
+    職業: カッコウ医院の先生
+
+  - 参照種別: character
+    参照ID: shirai_yui
+    表示名: null
+    役割: main
+    職業: ヒロイン
+    
+  - 参照種別: inline
+    参照ID: null
+    表示名: 白井　圭太
+    役割: sub
+    職業: 白井　結の夫
+    
+  - 参照種別: null
+    参照ID: null
+    役割: mob
+    職業: null
