@@ -23,14 +23,14 @@
         <div class="title-stack">
           <label>
             <span class="form-label">世界ID</span>
-            <input id="worldIdInput" type="text" value="kakko_clinic" />
+            <input id="worldIdInput" type="text" />
             <span>リストの表示順や処理で使用します。</span>
             <span id="worldIdError" class="error-message"></span>
           </label>
 
           <label>
             <span class="form-label">世界名</span>
-            <input id="worldNameInput" type="text" value="カッコウ医院編" />
+            <input id="worldNameInput" type="text" />
             <span>ここの名前で世界設定を表示します。</span>
             <span id="worldNameError" class="error-message"></span>
           </label>
@@ -64,13 +64,7 @@
             </div>
             <span id="includeError" class="error-message"></span>
           </div>
-          <textarea id="worldIncludePlayerYaml" spellcheck="false">
-【ベースの登場人物】
-[player]: 黒羽　究也：カッコウ医院の先生
-[main]: 白井　結：ヒロイン
-[sub]: 白井　圭太：白井　結の夫
-[mob]: 
-          </textarea>
+          <textarea id="worldIncludePlayerYaml" spellcheck="false"></textarea>
         </div>
 
         <div class="scenario-section">
@@ -117,16 +111,7 @@
               <button type="button">追加</button>
               <span id="worldGoalError" class="error-message"></span>
             </div>
-            <textarea id="worldGoalSettingYaml" spellcheck="false">
-goal:
-  - target: シナリオ1
-    use_flag: false
-    checkpoint:
-      - display_name: 条件1
-        status: false
-      - display_name: 条件2
-        status: false
-            </textarea>
+            <textarea id="worldGoalSettingYaml" spellcheck="false"></textarea>
           </div>
 
           <div class="box message-box">
@@ -136,15 +121,7 @@ goal:
               <button type="button">追加</button>
               <span id="worldParameterError" class="error-message"></span>
             </div>
-            <textarea id="worldParameterSettingYaml" spellcheck="false">
-dynamic_params:
-  - target: 白井 結
-    param_data:
-      - display_name: ユーザーへの好感度
-        count: 0
-      - display_name: 旦那への好感度
-        count: 100
-            </textarea>
+            <textarea id="worldParameterSettingYaml" spellcheck="false"></textarea>
           </div>
 
           <div class="box params-box">
@@ -304,14 +281,10 @@ dynamic_params:
     if (!includeStr.trim()) {
       setError("includeError", "登場人物が未設定です");
       hasError = true;
-    } 
-    // else if (includeStr.trim() !== lastReflectedIncludeText.trim()) {
-    //   setError("includeError", "隣のyaml内容を反映ボタンを押下してください。");
-    //   hasError = true;
-    // } else if (!hasParticipantRows()) {
-    //   setError("includeError", "登場人物が未設定です");
-    //   hasError = true;
-    // }
+    } else if (!hasParticipantRows()) {
+      setError("includeError", "登場人物テーブルに値がありません。隣のyaml内容を反映してください。");
+      hasError = true;
+    }
 
     if (!past.trim()) {
       setError("pastError", "過去が未設定です");
@@ -369,7 +342,7 @@ dynamic_params:
         past: past,
         current: current,
         future: future,
-        porpose: purpose,
+        purpose: purpose,
         supplement: supplement
       })
     });
@@ -485,7 +458,6 @@ dynamic_params:
 
     renderWorldList();
     selectWorld(newId);
-    clearWorldEditorContents();
   }
 
   function deleteWorld() {
@@ -511,7 +483,101 @@ dynamic_params:
     clearWorldForm();
   }
 
-  function selectWorld(worldId) {
+  async function loadWorldSettingsFromServer(worldId) {
+    console.log("loadWorldSettingsFromServer呼ばれた", worldId);
+    if (!worldId) return;
+
+    try {
+      const response = await fetch(`${FLASK_BASE_URL}/settings/load_world_settings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          base_chat_path: localStorage.getItem("base_chat_path") || "",
+          world_id: worldId
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || data.ok === false) {
+        alert(data.message || "世界設定の読み込みに失敗しました。");
+        return;
+      }
+
+      applyWorldSettings(data);
+    } catch (error) {
+      console.error("世界設定の読み込みに失敗しました", error);
+      alert("サーバー接続エラー");
+    }
+  }
+
+  function getWorldSettingValue(data, ...keys) {
+    for (const key of keys) {
+      if (data[key] !== undefined && data[key] !== null) {
+        return String(data[key]);
+      }
+    }
+    return "";
+  }
+
+  function setTextareaValue(id, value) {
+    const textarea = document.getElementById(id);
+    if (textarea) textarea.value = value || "";
+  }
+
+  function applyWorldSettings(data) {
+    clearWorldErrors();
+    clearParticipantTable();
+
+    console.log("中身", data);
+    
+    worldIdInput.value = data.world_id;
+    worldNameInput.value = data.world_name;
+
+    setTextareaValue(
+      "worldIncludePlayerYaml",
+      getWorldSettingValue(data, "登場人物", "characters", "world_include_player_yaml")
+    );
+    setTextareaValue(
+      "worldGoalSettingYaml",
+      getWorldSettingValue(data, "シナリオの目標", "goal_target", "world_goal_setting_yaml")
+    );
+    setTextareaValue(
+      "pastInput",
+      getWorldSettingValue(data, "過去", "past")
+    );
+    setTextareaValue(
+      "currentInput",
+      getWorldSettingValue(data, "現在", "now")
+    );
+    setTextareaValue(
+      "futureInput",
+      getWorldSettingValue(data, "未来", "future")
+    );
+    setTextareaValue(
+      "worldParameterSettingYaml",
+      getWorldSettingValue(data, "シナリオパラメータ", "scenario_parameter", "world_parameter_setting_yaml")
+    );
+    setTextareaValue(
+      "purposeInput",
+      getWorldSettingValue(data, "目的", "purpose")
+    );
+    setTextareaValue(
+      "supplementInput",
+      getWorldSettingValue(data, "補足", "supplement")
+    );
+    console.log(data);
+    setTextareaValue(
+      "startMessageInput",
+      getWorldSettingValue(data, "開始メッセージ", "start_message")
+    );
+
+  }
+
+  async function selectWorld(worldId) {
+    console.log("selectWorld呼ばれた", worldId);
     const worldList = [...loadWorldList(), ...pendingWorldList];
     const world = worldList.find(item => item.id === worldId);
     if (!world) return;
@@ -520,15 +586,35 @@ dynamic_params:
     document.getElementById("worldNameInput").value = world.name || "";
 
     localStorage.setItem("selected_world_id", world.id || "");
+    renderWorldList();
+
+    if (world.isPending) {
+      clearWorldEditorContents();
+      return;
+    }
+
+    await loadWorldSettingsFromServer(world.id || "");
   }
 
   function clearWorldForm() {
-    document.getElementById("worldIdInput").value = "";
-    document.getElementById("worldNameInput").value = "";
+    const worldIdInput = document.getElementById("worldIdInput");
+    const worldNameInput = document.getElementById("worldNameInput");
+
+    if (worldIdInput) worldIdInput.value = "";
+    if (worldNameInput) worldNameInput.value = "";
+  }
+
+  function initWorldPageForDisplay() {
+
+    clearWorldForm();
+    clearWorldEditorContents();
+    clearParticipantTable();
+
+    renderWorldList();
   }
 
   window.addEventListener("DOMContentLoaded", () => {
-    renderWorldList();
+    initWorldPageForDisplay();
 
     const addButton = document.getElementById("worldAddButton");
     if (addButton) {
@@ -539,6 +625,10 @@ dynamic_params:
     if (deleteButton) {
       deleteButton.addEventListener("click", deleteWorld);
     }
+  });
+
+  window.addEventListener("pageshow", () => {
+    initWorldPageForDisplay();
   });
 
   function clearWorldEditorContents() {
@@ -594,10 +684,14 @@ dynamic_params:
         button.classList.add("pending-item");
       }
 
+      if (world.id === localStorage.getItem("selected_world_id")) {
+        button.classList.add("active");
+      }
+
       button.textContent = world.name || world.id || "名称未設定";
 
-      button.addEventListener("click", () => {
-        selectWorld(world.id);
+      button.addEventListener("click", async () => {
+        await selectWorld(world.id);
       });
 
       worldListEl.appendChild(button);
@@ -845,6 +939,8 @@ dynamic_params:
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
   }
+
+  // window.resetWorldPageOnOpen = resetWorldPageOnOpen;
 </script>
 </body>
 </html>

@@ -18,6 +18,23 @@
       </section>
       <section class="settings-row base-path-row">
         <div class="setting-block">
+          <label class="setting-label">FlaskサーバーURL</label>
+          <div class="path-row">
+            <input
+              id="flaskBaseUrlInput"
+              type="text"
+              placeholder="例）http://127.0.0.1:5000">
+          </div>
+
+          <p class="setting-help">
+            FlaskServerの接続先を指定してください。<br>
+            単体PC： http://127.0.0.1:5000<br>
+            サブPC： http://192.168.xxx.xxx:5000
+          </p>
+
+          <p id="flaskBaseUrlMessage" class="status-message"></p>
+        </div>
+        <div class="setting-block">
           <label class="setting-label">ベースチャットパス</label>
           <div class="path-row">
             <input id="baseChatPathInput" type="text">

@@ -510,10 +510,10 @@ textarea {
   }
 
   .standee-preview img {
+    display: none;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    display: none; /* 最初は非表示 */
   }
 
   .standee-preview .placeholder {
@@ -521,5 +521,152 @@ textarea {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    background: transparent;
+  }
+}
+
+/* index_3column_session.html 側の画像枠に寄せた表示調整 */
+.title-icon-area .icon-preview {
+  width: 156px;
+  height: 156px;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed #aeb7c4;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.icon-preview img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icon-preview img.is-visible {
+  display: block;
+}
+
+.icon-preview .placeholder,
+.standee-preview .placeholder {
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.character-grid {
+  grid-template-columns: minmax(300px, 360px) 500px minmax(0, 1fr);
+}
+
+.standee-box {
+  align-content: start;
+  justify-items: start;
+}
+
+.box-header {
+  justify-content: flex-start;
+}
+
+.standee-preview {
+  width: min(100%, 360px);
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 2 / 3;
+  justify-self: start;
+  align-self: start;
+  border: 1px dashed #aeb7c4;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f7f8fb, #eef1f5);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.standee-preview img {
+  display: none;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.standee-preview img.is-visible {
+  display: block;
+}
+
+.standee-preview .placeholder {
+  position: static;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.character-textarea {
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.character-textarea:focus {
+  border-color: var(--accent);
+}
+
+.character-textarea::-webkit-scrollbar {
+  width: 10px;
+}
+
+.character-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.character-textarea::-webkit-scrollbar-thumb {
+  background: #c7cfdb;
+  border-radius: 999px;
+}
+
+.character-textarea::-webkit-scrollbar-thumb:hover {
+  background: #aeb7c4;
+}
+
+@media (max-width: 1200px) {
+  .title-icon-area .icon-preview {
+    width: 140px;
+    height: 140px;
+  }
+
+  .character-grid {
+    grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr);
+  }
+
+  .standee-preview {
+    width: min(100%, 320px);
+  }
+}
+
+@media (max-width: 850px) {
+  .title-icon-area .icon-preview {
+    width: 140px;
+    height: 140px;
+  }
+
+  .standee-preview {
+    width: min(100%, 320px);
+    height: auto;
+    aspect-ratio: 2 / 3;
   }
 }
