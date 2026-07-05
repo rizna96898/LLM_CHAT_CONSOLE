@@ -1,6 +1,3 @@
-const STORAGE_KEY = "base_path";
-const BASE_CHAT_PATH_KEY = "base_chat_path";
-const FLASK_BASE_URL = "http://127.0.0.1:5000";
 const settingsTitle = document.getElementById("settingsTitle");
 const basePathInput = document.getElementById("basePathInput");
 const baseChatPathInput = document.getElementById("baseChatPathInput");
@@ -15,7 +12,6 @@ const basePathMessage = document.getElementById("basePathMessage");
 const healthMessage = document.getElementById("healthMessage");
 const systemYamlMessage = document.getElementById("systemYamlMessage");
 const modelLoadMessage = document.getElementById("modelLoadMessage");
-
 const SERVER_DOWN_MESSAGE = `${FLASK_BASE_URL} が起動してません。`;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -26,14 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
   baseChatPathInput.value = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
 });
 
-function setMessage(element, text, type = "") {
-  element.textContent = text || "";
-  element.classList.remove("success", "error", "info");
-  if (type) {
-    element.classList.add(type);
-  }
-}
-
 function setServerDependentButtonsEnabled(enabled) {
   selectBasePathButton.disabled = !enabled;
   openSystemYamlButton.disabled = !enabled;
@@ -43,33 +31,6 @@ function setServerDependentButtonsEnabled(enabled) {
 function handleServerDown() {
   setServerDependentButtonsEnabled(false);
   setMessage(healthMessage, SERVER_DOWN_MESSAGE, "error");
-}
-
-async function requestJson(path, options = {}) {
-  const response = await fetch(`${FLASK_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  let data = {};
-  try {
-    data = await response.json();
-  } catch (_) {
-    data = {};
-  }
-
-  if (!response.ok || data.ok === false) {
-    const message = data.message || data.error || `サーバ返却エラー: ${response.status}`;
-    const error = new Error(message);
-    error.response = data;
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
 }
 
 healthCheckButton.addEventListener("click", async () => {
