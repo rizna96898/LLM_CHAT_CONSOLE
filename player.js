@@ -10,28 +10,29 @@ const tagList = document.getElementById("tagList");
 
 let selectedIconFile = null;
 let selectedStandingFile = null;
+
 function loadplayerList() {
     try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    playerList = Array.isArray(parsed) ? parsed : [];
+        const raw = localStorage.getItem(STORAGE_KEYS.PLAYER_LIST);
+        const parsed = raw ? JSON.parse(raw) : [];
+        playerList = Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-    playerList = [];
+        playerList = [];
     }
 
     playerList.sort((a, b) => String(a.id ?? "").localeCompare(String(b.id ?? "")));
 }
 
 function saveplayerList() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(playerList));
+    localStorage.setItem(STORAGE_KEYS.PLAYER_LIST, JSON.stringify(playerList));
 }
 
 function createNewPlayer() {
     return {
-    id: "new_player",
-    name: "新しいプレイヤー",
-    tags: [],
-    setting: ""
+        id: "new_player",
+        name: "新しいプレイヤー",
+        tags: [],
+        setting: ""
     };
 }
 
@@ -40,8 +41,8 @@ function createUniqueId(baseId) {
     let count = 2;
 
     while (playerList.some(player => player.id === id)) {
-    id = `${baseId}_${count}`;
-    count++;
+        id = `${baseId}_${count}`;
+        count++;
     }
 
     return id;
@@ -55,21 +56,21 @@ function renderPlayerList() {
     playerListBody.innerHTML = "";
 
     for (const player of playerList) {
-    const button = document.createElement("button");
-    button.className = "player-item";
-    button.textContent = player.name || player.id || "名称未設定";
+        const button = document.createElement("button");
+        button.className = "player-item";
+        button.textContent = player.name || player.id || "名称未設定";
 
-    if (player.id === selectedId) {
-        button.classList.add("active");
-    }
+        if (player.id === selectedId) {
+            button.classList.add("active");
+        }
 
-    button.addEventListener("click", () => {
-        selectedId = player.id;
-        renderPlayerList();
-        renderEditor(getSelectedPlayer());
-    });
+        button.addEventListener("click", () => {
+            selectedId = player.id;
+            renderPlayerList();
+            renderEditor(getSelectedPlayer());
+        });
 
-    playerListBody.appendChild(button);
+        playerListBody.appendChild(button);
     }
 }
 
@@ -91,10 +92,10 @@ function renderTags(tags) {
     tagList.innerHTML = "";
 
     for (const tag of tags) {
-    const span = document.createElement("span");
-    span.className = "tag-chip";
-    span.textContent = tag;
-    tagList.appendChild(span);
+        const span = document.createElement("span");
+        span.className = "tag-chip";
+        span.textContent = tag;
+        tagList.appendChild(span);
     }
 }
 
@@ -111,6 +112,7 @@ iconSelectButton.addEventListener('click', () => {
 standingSelectButton.addEventListener('click', () => {
     standingFileInput.click();
 });
+
 document.getElementById("addPlayerButton").addEventListener("click", () => {
     const newPlayer = createNewPlayer();
     newPlayer.id = createUniqueId(newPlayer.id);
@@ -126,7 +128,6 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     const idError = document.getElementById("idError");
     const nameError = document.getElementById("nameError");
 
-    // 一旦全部消す
     idError.textContent = "";
     nameError.textContent = "";
     settingError.textContent = "";
@@ -134,54 +135,55 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     let hasError = false;
 
     if (!playerIdInput.value.trim()) {
-    idError.textContent = "必須です";
-    hasError = true;
+        idError.textContent = "必須です";
+        hasError = true;
     } else if (!/^[a-zA-Z0-9_]+$/.test(playerIdInput.value)) {
-    idError.textContent = "半角英数字とアンダースコアのみ使用できます";
-    hasError = true;
+        idError.textContent = "半角英数字とアンダースコアのみ使用できます";
+        hasError = true;
     }
 
     if (!playerNameInput.value.trim()) {
-    nameError.textContent = "必須です";
-    hasError = true;
+        nameError.textContent = "必須です";
+        hasError = true;
     }
 
     if (!playerSettingInput.value.trim()) {
-    settingError.textContent = "必須です";
-    hasError = true;
+        settingError.textContent = "必須です";
+        hasError = true;
     }
 
     if (hasError) {
-    return;
+        return;
     }
 
     let player = getSelectedPlayer();
 
     if (!player) {
-    player = createNewPlayer();
-    player.id = createUniqueId(player.id);
-    playerList.push(player);
+        player = createNewPlayer();
+        player.id = createUniqueId(player.id);
+        playerList.push(player);
     }
 
     const oldId = player.id;
 
     player.id = playerIdInput.value.trim() || oldId || "new_player";
-    player.name = playerNameInput.value.trim() || "新しいキャラクター";
+    player.name = playerNameInput.value.trim() || "新しいプレイヤー";
     player.setting = playerSettingInput.value;
 
     selectedId = player.id;
 
     const saveId = playerIdInput.value.trim() || player.id || "new_player";
-    const saveName = playerNameInput.value.trim() || "新しいキャラクター";
+    const saveName = playerNameInput.value.trim() || "新しいプレイヤー";
     const saveSetting = playerSettingInput.value;
 
     try {
-    await saveImageFile("icon", selectedIconFile, saveId);
-    await saveImageFile("standing", selectedStandingFile, saveId);
-    await savePlayerSettingFile(saveId, saveName, playerSettingInput.value);
+        await saveImageFile("icon", selectedIconFile, saveId);
+        await saveImageFile("standing", selectedStandingFile, saveId);
+        await savePlayerSettingFile(saveId, saveName, playerSettingInput.value);
+        showToast("プレイヤーを保存しました", "success");
     } catch (error) {
-    alert(error.message);
-    return;
+        alert(error.message);
+        return;
     }
 
     player.id = saveId;
@@ -191,7 +193,7 @@ document.getElementById("saveButton").addEventListener("click", async () => {
 
     saveplayerList();
     loadplayerList();
-    selectedId = saveId;   // ← load後にもう一回入れる
+    selectedId = saveId;
     renderPlayerList();
     renderEditor(getSelectedPlayer() ?? createNewPlayer());
 });
@@ -211,29 +213,29 @@ document.getElementById("deleteButton").addEventListener("click", () => {
 
 document.getElementById("initializeButton").addEventListener("click", async () => {
     try {
-    const baseChatPath = localStorage.getItem("base_chat_path") || "";
+        const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
 
-    const res = await fetch("http://127.0.0.1:5000/settings/get_template_player_yaml", {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-        base_chat_path: baseChatPath
-        })
-    });
+        const res = await fetch(getFlaskBaseUrl() + API_PATHS.GET_TEMPLATE_PLAYER_YAML, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                base_chat_path: baseChatPath
+            })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (!data.ok) {
-        alert(data.message || "テンプレ取得失敗");
-        return;
-    }
+        if (!data.ok) {
+            alert(data.message || "テンプレ取得失敗");
+            return;
+        }
 
-    playerSettingInput.value = data.content;
+        playerSettingInput.value = data.content;
 
     } catch (e) {
-    alert("サーバー接続エラー");
+        alert("サーバー接続エラー");
     }
 });
 
@@ -253,7 +255,7 @@ if (playerList.length > 0) {
     renderEditor(playerList[0]);
 } else {
     selectedId = null;
-    clearEditor();   // ★ここ
+    clearEditor();
 }
 
 renderPlayerList();
@@ -264,7 +266,6 @@ const iconPreview = document.getElementById('iconPreview');
 const standingInput = document.getElementById('standingFileInput');
 const standingPreview = document.getElementById('standingPreview');
 
-// アイコン
 const iconImg = document.getElementById('iconImg');
 const iconPlaceholder = document.querySelector('#iconPreview .placeholder');
 
@@ -300,49 +301,50 @@ standingInput.addEventListener('change', (e) => {
 async function saveImageFile(imageType, file, playerId) {
     if (!file) return;
 
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
     const formData = new FormData();
 
-    formData.append("base_chat_path", baseChatPath);
+    formData.append(STORAGE_KEYS.BASE_CHAT_PATH, baseChatPath);
     formData.append("player_id", playerId);
-    formData.append("image_type", imageType); // icon / standing
+    formData.append("image_type", imageType);
     formData.append("file", file);
 
-    const response = await fetch(`${FLASK_BASE_URL}/settings/save_image`, {
-    method: "POST",
-    body: formData
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_IMAGE, {
+        method: "POST",
+        body: formData
     });
 
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.ok === false) {
-    settingError.textContent = data.message || "エラーが発生しました";
-    throw new Error(data.message || `${imageType}画像の保存に失敗しました。`);
+        settingError.textContent = data.message || "エラーが発生しました";
+        throw new Error(data.message || `${imageType}画像の保存に失敗しました。`);
     }
 
     return data;
 }
 
 async function savePlayerSettingFile(playerId, playerName, settingText) {
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
-    const response = await fetch(`${FLASK_BASE_URL}/settings/save_player_setting`, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        base_chat_path: baseChatPath,
-        player_id: playerId,
-        player_name: playerName,
-        content: settingText
-    })
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_PLAYER_SETTING, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            base_chat_path: baseChatPath,
+            player_id: playerId,
+            player_name: playerName,
+            content: settingText
+        })
     });
 
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.ok === false) {
-    settingError.textContent = data.message || "エラーが発生しました";
-    throw new Error(data.message || "キャラクター設定の保存に失敗しました。");
+        settingError.textContent = data.message || "エラーが発生しました";
+        throw new Error(data.message || "プレイヤー設定の保存に失敗しました。");
     }
 
     return data;
