@@ -191,13 +191,6 @@ function buildSessionFromNewChatResult(result, fallbackWorldId, fallbackWorldNam
     };
 }
 
-function formatSessionUpdatedAt(value) {
-    if (!value) return "";
-    // ひとまずサーバー文字列をそのまま表示。
-    // 後で「昨日」「5/06」などに寄せるならここだけ修正する。
-    return value;
-}
-
 function clearSessionList() {
     if (!sessionList) return;
     sessionList.innerHTML = "";
@@ -253,7 +246,7 @@ function renderSessionList(sessions, selectedSessionId) {
 
     const iconText = session.world_name ? session.world_name.slice(0, 1) : "世";
     const displayName = session.display_name || "名称未設定";
-    const updatedAt = formatSessionUpdatedAt(session.updated_at);
+    const updatedAt = session.updated_at || "";
 
     row.innerHTML = `
         <div class="session-name">

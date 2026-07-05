@@ -18,3 +18,15 @@ const MESSAGE_TYPE = {
   ERROR: "error",
   INFO: "info",
 };
+
+const FLASK_BASE_URL_KEY = "flask_base_url";
+const BASE_CHAT_PATH_KEY = "base_chat_path";
+
+const API_PATHS = {
+  HEALTH: "/health",
+  WORLD_START: "/world_start",
+  CHAT_STARTUP: "/chat_startup",
+  NEW_CHAT: "/new_chat",
+  DELETE_SESSION: "/delete_session",
+  LOAD_SESSION_LIST: "/load_session_list",
+};
