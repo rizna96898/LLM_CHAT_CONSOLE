@@ -1,593 +1,562 @@
 async function loadTemplateToTextarea(endpoint, textareaId) {
-const textarea = document.getElementById(textareaId);
+  const textarea = document.getElementById(textareaId);
 
-if (!textarea) {
+  if (!textarea) {
     console.error("textarea が見つかりません:", textareaId);
     return;
-}
+  }
 
-try {
-    const baseChatPath = localStorage.getItem("base_chat_path") || "";
-
-    const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-        base_chat_path: baseChatPath
-        })
+  try {
+    const data = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify({
+        base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+      }),
     });
 
-    const data = await res.json();
-
-    if (!data.ok) {
-        alert(data.message || "テンプレ取得失敗");
-        return;
-    }
-
     textarea.value = data.content;
-
-    } catch (e) {
-    alert("サーバー接続エラー");
-    }
+  } catch (e) {
+    alert(e.message || "テンプレ取得失敗");
+  }
 }
 
 document.getElementById("initIncludePlayerYamlButton")?.addEventListener("click", () => {
-loadTemplateToTextarea(
-    `${FLASK_BASE_URL}/settings/get_template_world_include_player_yaml`,
+  loadTemplateToTextarea(
+    API_PATHS.GET_TEMPLATE_WORLD_INCLUDE_PLAYER_YAML,
     "worldIncludePlayerYaml"
-);
+  );
 });
 
 document.getElementById("initGoalSettingYamlButton")?.addEventListener("click", () => {
-loadTemplateToTextarea(
-    `${FLASK_BASE_URL}/settings/get_template_world_goal_setting_yaml`,
+  loadTemplateToTextarea(
+    API_PATHS.GET_TEMPLATE_WORLD_GOAL_SETTING_YAML,
     "worldGoalSettingYaml"
-);
+  );
 });
 
 document.getElementById("initParameterSettingYamlButton")?.addEventListener("click", () => {
-loadTemplateToTextarea(
-    `${FLASK_BASE_URL}/settings/get_template_world_parameter_setting_yaml`,
+  loadTemplateToTextarea(
+    API_PATHS.GET_TEMPLATE_WORLD_PARAMETER_SETTING_YAML,
     "worldParameterSettingYaml"
-);
+  );
 });
 
 function getWorldList() {
-try {
-    const raw = localStorage.getItem("world_list");
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-} catch {
-    return [];
-}
+  return getStorageArray(STORAGE_KEYS.WORLD_LIST);
 }
 
 function clearWorldErrors() {
-[
+  [
     "worldIdError",
     "worldNameError",
     "includeError",
     "pastError",
     "currentError",
     "futureError",
-    "purposeError"
-].forEach(id => setError(id, ""));
+    "purposeError",
+    "worldGoalError",
+    "worldParameterError",
+  ].forEach(id => setError(id, ""));
 }
 
 function hasParticipantRows() {
-const body = document.querySelector(".participant-body");
-return body && body.children.length > 0;
+  const body = document.querySelector(".participant-body");
+  return body && body.children.length > 0;
 }
 
 async function saveWorldSetting() {
-clearWorldErrors();
+  clearWorldErrors();
 
-const baseChatPath = localStorage.getItem("base_chat_path") || "";
+  const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
 
-const worldId = document.getElementById("worldIdInput").value.trim();
-const worldName = document.getElementById("worldNameInput").value.trim();
+  const worldId = document.getElementById("worldIdInput").value.trim();
+  const worldName = document.getElementById("worldNameInput").value.trim();
 
-const includeStr = document.getElementById("worldIncludePlayerYaml").value;
-const goalStr = document.getElementById("worldGoalSettingYaml").value;
-const parameterStr = document.getElementById("worldParameterSettingYaml").value;
+  const includeStr = document.getElementById("worldIncludePlayerYaml").value;
+  const goalStr = document.getElementById("worldGoalSettingYaml").value;
+  const parameterStr = document.getElementById("worldParameterSettingYaml").value;
 
-const startMessage = document.getElementById("startMessageInput").value;
-const past = document.getElementById("pastInput").value;
-const current = document.getElementById("currentInput").value;
-const future = document.getElementById("futureInput").value;
-const purpose = document.getElementById("purposeInput").value;
-const supplement = document.getElementById("supplementInput").value;
+  const startMessage = document.getElementById("startMessageInput").value;
+  const past = document.getElementById("pastInput").value;
+  const current = document.getElementById("currentInput").value;
+  const future = document.getElementById("futureInput").value;
+  const purpose = document.getElementById("purposeInput").value;
+  const supplement = document.getElementById("supplementInput").value;
 
-let hasError = false;
+  let hasError = false;
 
-if (!worldId) {
+  if (!worldId) {
     setError("worldIdError", "必須です");
     hasError = true;
-} else if (!/^[a-zA-Z0-9_]+$/.test(worldId)) {
+  } else if (!/^[a-zA-Z0-9_]+$/.test(worldId)) {
     setError("worldIdError", "世界IDは半角英数字と「_」のみ使用できます。");
     hasError = true;
-}
+  }
 
-const worldList = getWorldList();
-const currentSelectedWorldId = localStorage.getItem("selected_world_id") || "";
+  const worldList = getWorldList();
+  const currentSelectedWorldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
 
-const existsOther = worldList.some(world =>
+  const existsOther = worldList.some(world =>
     world.id === worldId && world.id !== currentSelectedWorldId
-);
+  );
 
-if (existsOther) {
+  if (existsOther) {
     setError("worldIdError", "既に存在しているIDです。");
     hasError = true;
-}
+  }
 
-if (!worldName) {
+  if (!worldName) {
     setError("worldNameError", "必須です");
     hasError = true;
-}
+  }
 
-if (!includeStr.trim()) {
+  if (!includeStr.trim()) {
     setError("includeError", "登場人物が未設定です");
     hasError = true;
-} else if (!hasParticipantRows()) {
+  } else if (!hasParticipantRows()) {
     setError("includeError", "登場人物テーブルに値がありません。隣のyaml内容を反映してください。");
     hasError = true;
-}
+  }
 
-if (!past.trim()) {
+  if (!past.trim()) {
     setError("pastError", "過去が未設定です");
     hasError = true;
-}
+  }
 
-if (!current.trim()) {
+  if (!current.trim()) {
     setError("currentError", "現在が未設定です");
     hasError = true;
-}
+  }
 
-if (!future.trim()) {
+  if (!future.trim()) {
     setError("futureError", "未来が未設定です");
     hasError = true;
-}
+  }
 
-if (!purpose.trim()) {
+  if (!purpose.trim()) {
     setError("purposeError", "目的が未設定です");
     hasError = true;
-}
+  }
 
-var includeCheck = validateSimpleYamlText(includeStr)
-if ( includeCheck.length > 0) {
+  const includeCheck = validateSimpleYamlText(includeStr);
+  if (includeCheck.length > 0) {
     setError("includeError", includeCheck.join("\n"));
     hasError = true;
-}
+  }
 
-var goalCheck = validateSimpleYamlText(goalStr)
-if ( goalCheck.length > 0) {
+  const goalCheck = validateSimpleYamlText(goalStr);
+  if (goalCheck.length > 0) {
     setError("worldGoalError", goalCheck.join("\n"));
     hasError = true;
-}
+  }
 
-var parameterCheck = validateSimpleYamlText(parameterStr)
-if ( parameterCheck.length > 0) {
+  const parameterCheck = validateSimpleYamlText(parameterStr);
+  if (parameterCheck.length > 0) {
     setError("worldParameterError", parameterCheck.join("\n"));
     hasError = true;
-}
+  }
 
-if (hasError) return;
+  if (hasError) return;
 
-const response = await fetch(`${FLASK_BASE_URL}/settings/save_world_setting`, {
-    method: "POST",
-    headers: {
-    "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-    base_chat_path: baseChatPath,
-    world_id: worldId,
-    world_name: worldName,
-    include_data: includeStr,
-    goal_data: goalStr,
-    parameter_data: parameterStr,
-    start_message: startMessage,
-    past: past,
-    current: current,
-    future: future,
-    purpose: purpose,
-    supplement: supplement
-    })
-});
+  try {
+    const data = await requestJson(API_PATHS.SAVE_WORLD_SETTING, {
+      method: "POST",
+      body: JSON.stringify({
+        base_chat_path: baseChatPath,
+        world_id: worldId,
+        world_name: worldName,
+        include_data: includeStr,
+        goal_data: goalStr,
+        parameter_data: parameterStr,
+        start_message: startMessage,
+        past: past,
+        current: current,
+        future: future,
+        purpose: purpose,
+        supplement: supplement,
+      }),
+    });
 
-const data = await response.json().catch(() => ({}));
+    alert(data.message || "世界設定を保存しました。");
 
-if (!response.ok || data.ok === false) {
-    alert(data.message || "世界設定の保存に失敗しました。");
-    return;
-}
+    pendingWorldList = pendingWorldList.filter(
+      world => world.id !== worldId
+    );
 
-alert(data.message || "世界設定を保存しました。");
-pendingWorldList = pendingWorldList.filter(
-    world => world.id !== worldId
-);
-upsertWorldList(worldId, worldName);
-renderWorldList();
-localStorage.setItem("selected_world_id", worldId);
+    upsertWorldList(worldId, worldName);
+    renderWorldList();
+
+    localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, worldId);
+  } catch (error) {
+    alert(error.message || "世界設定の保存に失敗しました。");
+  }
 }
 
 document.getElementById("saveWorldButton")?.addEventListener("click", saveWorldSetting);
+
 function loadWorldList() {
-try {
-    const raw = localStorage.getItem(WORLD_LIST_STORAGE_KEY);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.WORLD_LIST);
     if (!raw) return [];
 
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
 
     return list
-    .filter(world => world && typeof world === "object")
-    .sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")));
-} catch (e) {
+      .filter(world => world && typeof world === "object")
+      .sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")));
+  } catch (e) {
     console.error("world_list の読み込みに失敗しました", e);
     return [];
-}
+  }
 }
 
 function saveWorldList(worldList) {
-localStorage.setItem(WORLD_LIST_STORAGE_KEY, JSON.stringify(worldList));
+  localStorage.setItem(STORAGE_KEYS.WORLD_LIST, JSON.stringify(worldList));
 }
 
 function addWorld() {
-const worldList = [...loadWorldList(), ...pendingWorldList];
+  const worldList = [...loadWorldList(), ...pendingWorldList];
 
-let newId = "new_world";
-let count = 1;
+  let newId = "new_world";
+  let count = 1;
 
-while (worldList.some(world => world.id === newId)) {
+  while (worldList.some(world => world.id === newId)) {
     count++;
     newId = `new_world_${count}`;
-}
+  }
 
-const newWorld = {
+  const newWorld = {
     id: newId,
     name: "新しい世界",
-    isPending: true
-};
+    isPending: true,
+  };
 
-pendingWorldList.push(newWorld);
+  pendingWorldList.push(newWorld);
 
-renderWorldList();
-selectWorld(newId);
+  renderWorldList();
+  selectWorld(newId);
 }
 
 function deleteWorld() {
-const worldId = document
+  const worldId = document
     .getElementById("worldIdInput")
     ?.value
     ?.trim();
 
-if (!worldId) {
+  if (!worldId) {
     return;
-}
+  }
 
-const worldList = loadWorldList();
+  const worldList = loadWorldList();
 
-const nextList = worldList.filter(
+  const nextList = worldList.filter(
     world => world.id !== worldId
-);
+  );
 
-saveWorldList(nextList);
+  saveWorldList(nextList);
 
-renderWorldList();
+  renderWorldList();
 
-clearWorldForm();
+  clearWorldForm();
 }
 
 async function loadWorldSettingsFromServer(worldId) {
-if (!worldId) return;
+  if (!worldId) return;
 
-try {
-    const response = await fetch(`${FLASK_BASE_URL}/settings/load_world_settings`, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        base_chat_path: localStorage.getItem("base_chat_path") || "",
-        world_id: worldId
-    })
+  try {
+    const data = await requestJson(API_PATHS.LOAD_WORLD_SETTINGS, {
+      method: "POST",
+      body: JSON.stringify({
+        base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+        world_id: worldId,
+      }),
     });
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data.ok === false) {
-    alert(data.message || "世界設定の読み込みに失敗しました。");
-    return;
-    }
-
     applyWorldSettings(data);
-} catch (error) {
+  } catch (error) {
     console.error("世界設定の読み込みに失敗しました", error);
-    alert("サーバー接続エラー");
-}
+    alert(error.message || "世界設定の読み込みに失敗しました。");
+  }
 }
 
 function getWorldSettingValue(data, ...keys) {
-for (const key of keys) {
+  for (const key of keys) {
     if (data[key] !== undefined && data[key] !== null) {
-    return String(data[key]);
+      return String(data[key]);
     }
-}
-return "";
+  }
+  return "";
 }
 
 function applyWorldSettings(data) {
-clearWorldErrors();
-clearParticipantTable();
+  clearWorldErrors();
+  clearParticipantTable();
 
-worldIdInput.value = data.world_id;
-worldNameInput.value = data.world_name;
+  worldIdInput.value = data.world_id;
+  worldNameInput.value = data.world_name;
 
-setTextareaValue(
+  setTextareaValue(
     "worldIncludePlayerYaml",
     getWorldSettingValue(data, "登場人物", "characters", "world_include_player_yaml")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "worldGoalSettingYaml",
     getWorldSettingValue(data, "シナリオの目標", "goal_target", "world_goal_setting_yaml")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "pastInput",
     getWorldSettingValue(data, "過去", "past")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "currentInput",
     getWorldSettingValue(data, "現在", "now")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "futureInput",
     getWorldSettingValue(data, "未来", "future")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "worldParameterSettingYaml",
     getWorldSettingValue(data, "シナリオパラメータ", "scenario_parameter", "world_parameter_setting_yaml")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "purposeInput",
     getWorldSettingValue(data, "目的", "purpose")
-);
-setTextareaValue(
+  );
+  setTextareaValue(
     "supplementInput",
     getWorldSettingValue(data, "補足", "supplement")
-);
-
-setTextareaValue(
+  );
+  setTextareaValue(
     "startMessageInput",
     getWorldSettingValue(data, "開始メッセージ", "start_message")
-);
-
+  );
 }
 
 async function selectWorld(worldId) {
+  const worldList = [...loadWorldList(), ...pendingWorldList];
+  const world = worldList.find(item => item.id === worldId);
+  if (!world) return;
 
-const worldList = [...loadWorldList(), ...pendingWorldList];
-const world = worldList.find(item => item.id === worldId);
-if (!world) return;
+  document.getElementById("worldIdInput").value = world.id || "";
+  document.getElementById("worldNameInput").value = world.name || "";
 
-document.getElementById("worldIdInput").value = world.id || "";
-document.getElementById("worldNameInput").value = world.name || "";
+  localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, world.id || "");
 
-localStorage.setItem("selected_world_id", world.id || "");
-renderWorldList();
+  renderWorldList();
 
-if (world.isPending) {
+  if (world.isPending) {
     clearWorldEditorContents();
     return;
-}
+  }
 
-await loadWorldSettingsFromServer(world.id || "");
+  await loadWorldSettingsFromServer(world.id || "");
 }
 
 function clearWorldForm() {
-const worldIdInput = document.getElementById("worldIdInput");
-const worldNameInput = document.getElementById("worldNameInput");
+  const worldIdInput = document.getElementById("worldIdInput");
+  const worldNameInput = document.getElementById("worldNameInput");
 
-if (worldIdInput) worldIdInput.value = "";
-if (worldNameInput) worldNameInput.value = "";
+  if (worldIdInput) worldIdInput.value = "";
+  if (worldNameInput) worldNameInput.value = "";
 }
 
 function initWorldPageForDisplay() {
+  clearWorldForm();
+  clearWorldEditorContents();
+  clearParticipantTable();
 
-clearWorldForm();
-clearWorldEditorContents();
-clearParticipantTable();
-
-renderWorldList();
+  renderWorldList();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-initWorldPageForDisplay();
+  initWorldPageForDisplay();
 
-const addButton = document.getElementById("worldAddButton");
-if (addButton) {
+  const addButton = document.getElementById("worldAddButton");
+  if (addButton) {
     addButton.addEventListener("click", addWorld);
-}
+  }
 
-const deleteButton = document.getElementById("worldDeleteButton");
-if (deleteButton) {
+  const deleteButton = document.getElementById("worldDeleteButton");
+  if (deleteButton) {
     deleteButton.addEventListener("click", deleteWorld);
-}
+  }
 });
 
 window.addEventListener("pageshow", () => {
-initWorldPageForDisplay();
+  initWorldPageForDisplay();
 });
 
 function clearWorldEditorContents() {
-document.getElementById("worldIncludePlayerYaml").value = "";
-document.getElementById("worldGoalSettingYaml").value = "";
-document.getElementById("worldParameterSettingYaml").value = "";
-document.getElementById("startMessageInput").value = "";
-document.getElementById("pastInput").value = "";
-document.getElementById("currentInput").value = "";
-document.getElementById("futureInput").value = "";
-document.getElementById("purposeInput").value = "";
-document.getElementById("supplementInput").value = "";
-clearWorldErrors();
+  document.getElementById("worldIncludePlayerYaml").value = "";
+  document.getElementById("worldGoalSettingYaml").value = "";
+  document.getElementById("worldParameterSettingYaml").value = "";
+  document.getElementById("startMessageInput").value = "";
+  document.getElementById("pastInput").value = "";
+  document.getElementById("currentInput").value = "";
+  document.getElementById("futureInput").value = "";
+  document.getElementById("purposeInput").value = "";
+  document.getElementById("supplementInput").value = "";
+  clearWorldErrors();
 }
 
 function upsertWorldList(worldId, worldName) {
-const worldList = loadWorldList();
+  const worldList = loadWorldList();
 
-const nextList = worldList.filter(world =>
+  const nextList = worldList.filter(world =>
     (world.id || world.world_id) !== worldId
-);
+  );
 
-nextList.push({
+  nextList.push({
     id: worldId,
-    name: worldName
-});
+    name: worldName,
+  });
 
-saveWorldList(nextList);
+  saveWorldList(nextList);
 }
 
 let pendingWorldList = [];
 
 function renderWorldList() {
-const worldListEl = document.getElementById("worldList");
-if (!worldListEl) return;
+  const worldListEl = document.getElementById("worldList");
+  if (!worldListEl) return;
 
-const savedList = loadWorldList();
+  const savedList = loadWorldList();
 
-const worldList = [...savedList, ...pendingWorldList]
+  const worldList = [...savedList, ...pendingWorldList]
     .sort((a, b) =>
-    String(a.id || "").localeCompare(String(b.id || ""))
+      String(a.id || "").localeCompare(String(b.id || ""))
     );
 
-worldListEl.innerHTML = "";
+  worldListEl.innerHTML = "";
 
-worldList.forEach(world => {
+  worldList.forEach(world => {
     const button = document.createElement("button");
 
     button.type = "button";
     button.className = "scenario-item";
 
     if (world.isPending) {
-    button.classList.add("pending-item");
+      button.classList.add("pending-item");
     }
 
-    if (world.id === localStorage.getItem("selected_world_id")) {
-    button.classList.add("active");
+    if (world.id === localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID)) {
+      button.classList.add("active");
     }
 
     button.textContent = world.name || world.id || "名称未設定";
 
     button.addEventListener("click", async () => {
-    await selectWorld(world.id);
+      await selectWorld(world.id);
     });
 
     worldListEl.appendChild(button);
-});
+  });
 }
+
 document.getElementById("reflectParticipantsButton")
-?.addEventListener("click", reflectParticipantsFromYaml);
+  ?.addEventListener("click", reflectParticipantsFromYaml);
 
 function reflectParticipantsFromYaml() {
-setError("includeError", "");
-clearParticipantTable();
+  setError("includeError", "");
+  clearParticipantTable();
 
-const yamlText = document.getElementById("worldIncludePlayerYaml").value;
+  const yamlText = document.getElementById("worldIncludePlayerYaml").value;
 
-const result = parseWorldParticipantsYaml(yamlText);
+  const result = parseWorldParticipantsYaml(yamlText);
 
-if (!result.ok) {
+  if (!result.ok) {
     setError("includeError", result.errors.join("\n"));
     return;
-}
+  }
 
-const checked = validateParticipants(result.items);
+  const checked = validateParticipants(result.items);
 
-if (!checked.ok) {
+  if (!checked.ok) {
     setError("includeError", checked.errors.join("\n"));
     return;
-}
+  }
 
-renderParticipantTable(checked.rows);
+  renderParticipantTable(checked.rows);
 }
 
 function clearParticipantTable() {
-const body = document.querySelector(".participant-body");
-if (body) body.innerHTML = "";
+  const body = document.querySelector(".participant-body");
+  if (body) body.innerHTML = "";
 }
 
 function parseWorldParticipantsYaml(text) {
-const errors = [];
-const lines = text.split(/\r?\n/);
+  const errors = [];
+  const lines = text.split(/\r?\n/);
 
-let inRoot = false;
-let current = null;
-const items = [];
+  let inRoot = false;
+  let current = null;
+  const items = [];
 
-lines.forEach((rawLine, index) => {
+  lines.forEach((rawLine, index) => {
     const lineNo = index + 1;
     const line = rawLine.trim();
 
     if (!line || line.startsWith("#")) return;
 
     if (rawLine.includes("\t")) {
-    errors.push(`${lineNo}行目: タブは使えません`);
-    return;
+      errors.push(`${lineNo}行目: タブは使えません`);
+      return;
     }
 
     if (line === "世界の登場人物:") {
-    inRoot = true;
-    return;
+      inRoot = true;
+      return;
     }
 
     if (!inRoot) {
-    errors.push(`${lineNo}行目: 先頭に「世界の登場人物:」が必要です`);
-    return;
+      errors.push(`${lineNo}行目: 先頭に「世界の登場人物:」が必要です`);
+      return;
     }
 
     if (line.startsWith("- ")) {
-    if (current) items.push(current);
-    current = {};
+      if (current) items.push(current);
+      current = {};
 
-    const rest = line.slice(2).trim();
-    if (rest) {
+      const rest = line.slice(2).trim();
+      if (rest) {
         const kv = parseKeyValue(rest, lineNo, errors);
         if (kv) current[kv.key] = kv.value;
-    }
-    return;
+      }
+      return;
     }
 
     if (!current) {
-    errors.push(`${lineNo}行目: 配列「- 参照種別: ...」から開始してください`);
-    return;
+      errors.push(`${lineNo}行目: 配列「- 参照種別: ...」から開始してください`);
+      return;
     }
 
     const kv = parseKeyValue(line, lineNo, errors);
     if (kv) current[kv.key] = kv.value;
-});
+  });
 
-if (current) items.push(current);
+  if (current) items.push(current);
 
-if (!inRoot) {
+  if (!inRoot) {
     errors.push("世界の登場人物: がありません");
-}
+  }
 
-return {
+  return {
     ok: errors.length === 0,
     errors,
-    items
-};
+    items,
+  };
 }
 
 function validateParticipants(items) {
-const errors = [];
-const rows = [];
+  const errors = [];
+  const rows = [];
 
-const playerList = getStorageArray("player_list");
-const charList = getStorageArray("char_list");
+  const playerList = getStorageArray(STORAGE_KEYS.PLAYER_LIST);
+  const charList = getStorageArray(STORAGE_KEYS.CHARACTER_LIST);
 
-items.forEach((item, index) => {
+  items.forEach((item, index) => {
     const no = index + 1;
 
     const refType = item["参照種別"];
@@ -596,98 +565,97 @@ items.forEach((item, index) => {
     const role = item["役割"];
 
     if (!refType) {
-    errors.push(`${no}件目: 参照種別がありません`);
-    return;
+      errors.push(`${no}件目: 参照種別がありません`);
+      return;
     }
 
     if (refType === "null") {
-    return;
+      return;
     }
 
     if (refType === "player") {
-    const player = playerList.find(p => p.id === refId);
+      const player = playerList.find(p => p.id === refId);
 
-    if (!refId || refId === "null") {
+      if (!refId || refId === "null") {
         errors.push(`${no}件目: player の参照IDがありません`);
         return;
-    }
+      }
 
-    if (!player) {
+      if (!player) {
         errors.push(`${no}件目: player_list に存在しない参照IDです: ${refId}`);
         return;
-    }
+      }
 
-    rows.push({
+      rows.push({
         name: player.name || player.display_name || refId,
-        role: role || "player"
-    });
-    return;
+        role: role || "player",
+      });
+      return;
     }
 
     if (refType === "character") {
-    const char = charList.find(c => c.id === refId);
+      const char = charList.find(c => c.id === refId);
 
-    if (!refId || refId === "null") {
+      if (!refId || refId === "null") {
         errors.push(`${no}件目: character の参照IDがありません`);
         return;
-    }
+      }
 
-    if (!char) {
+      if (!char) {
         errors.push(`${no}件目: char_list に存在しない参照IDです: ${refId}`);
         return;
-    }
+      }
 
-    rows.push({
+      rows.push({
         name: char.name || char.display_name || refId,
-        role: role || "main"
-    });
-    return;
+        role: role || "main",
+      });
+      return;
     }
 
     if (refType === "inline") {
-    if (!displayName || displayName === "null") {
+      if (!displayName || displayName === "null") {
         errors.push(`${no}件目: inline は表示名が必須です`);
         return;
-    }
+      }
 
-    if (!["sub", "mob"].includes(role)) {
+      if (!["sub", "mob"].includes(role)) {
         errors.push(`${no}件目: inline の役割は sub または mob のみです`);
         return;
-    }
+      }
 
-    rows.push({
+      rows.push({
         name: displayName,
-        role: role
-    });
-    return;
+        role: role,
+      });
+      return;
     }
 
     errors.push(`${no}件目: 参照種別は player / character / inline / null のみです`);
-});
+  });
 
-return {
+  return {
     ok: errors.length === 0,
     errors,
-    rows
-};
+    rows,
+  };
 }
 
-
 function renderParticipantTable(rows) {
-const body = document.querySelector(".participant-body");
-if (!body) return;
+  const body = document.querySelector(".participant-body");
+  if (!body) return;
 
-body.innerHTML = "";
+  body.innerHTML = "";
 
-rows.forEach(row => {
+  rows.forEach(row => {
     const div = document.createElement("div");
     div.className = "participant-row";
 
     div.innerHTML = `
-    <div>${escapeHtml(row.name)}</div>
-    <div>${escapeHtml(row.role)}</div>
+      <div>${escapeHtml(row.name)}</div>
+      <div>${escapeHtml(row.role)}</div>
     `;
 
     body.appendChild(div);
-});
+  });
 }
