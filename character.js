@@ -13,7 +13,7 @@ let selectedStandingFile = null;
 
 function loadCharList() {
     try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEYS.CHARACTER_LIST);
     const parsed = raw ? JSON.parse(raw) : [];
     charList = Array.isArray(parsed) ? parsed : [];
     } catch (e) {
@@ -23,7 +23,7 @@ function loadCharList() {
 }
 
 function saveCharList() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(charList));
+    localStorage.setItem(STORAGE_KEYS.CHARACTER_LIST, JSON.stringify(charList));
 }
 
 function createNewCharacter() {
@@ -87,8 +87,8 @@ function renderEditor(char) {
 }
 
 async function loadCharacterSettings(characterId) {
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
-    const response = await fetch(`${FLASK_BASE_URL}/settings/load_character_settings`, {
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+    const response = await fetch(`${FLASK_BASE_URL}API_PATHS.LOAD_CHARACTER_SETTINGS`, {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
@@ -240,8 +240,8 @@ document.getElementById("deleteButton").addEventListener("click", () => {
 
 document.getElementById("initializeButton").addEventListener("click", async () => {
     try {
-    const baseChatPath = localStorage.getItem("base_chat_path") || "";
-    const res = await fetch("http://127.0.0.1:5000/settings/get_template_character_yaml", {
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+    const res = await fetch(getFlaskBaseUrl() + API_PATHS.GET_TEMPLATE_CHARACTER_YAML, {
         method: "POST",
         headers: {
         "Content-Type": "application/json"
@@ -288,7 +288,7 @@ function clearImagePreview(img, placeholder) {
 }
 
 function buildImageUrl(imageType, characterId) {
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
     if (!baseChatPath || !characterId) return "";
 
     const encodedType = encodeURIComponent(imageType);
@@ -303,7 +303,7 @@ function buildImageUrl(imageType, characterId) {
     console.log("encodedBasePath",encodedBasePath);
     console.log("cacheBuster",cacheBuster);
 
-    return `${FLASK_BASE_URL}/settings/load_image/${encodedType}/${encodedId}?base_chat_path=${encodedBasePath}&v=${cacheBuster}`;
+    return getFlaskBaseUrl() + API_PATHS.LOAD_IMAGE + `/${encodedType}/${encodedId}?base_chat_path=${encodedBasePath}&v=${cacheBuster}`;
 }
 
 function applyImageUrl(img, placeholder, imageUrl) {
@@ -593,14 +593,14 @@ standingInput.addEventListener('change', (e) => {
 async function saveImageFile(imageType, file, characterId) {
     if (!file) return;
 
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
     const formData = new FormData();
-    formData.append("base_chat_path", baseChatPath);
+    formData.append(STORAGE_KEYS.BASE_CHAT_PATH, baseChatPath);
     formData.append("character_id", characterId);
     formData.append("image_type", imageType);
     formData.append("file", file);
 
-    const response = await fetch(`${FLASK_BASE_URL}/settings/save_image`, {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_IMAGE, {
     method: "POST",
     body: formData
     });
@@ -614,8 +614,8 @@ async function saveImageFile(imageType, file, characterId) {
 }
 
 async function saveCharacterSettingFile(characterId, characterName, settingText) {
-    const baseChatPath = localStorage.getItem(BASE_CHAT_PATH_KEY) || "";
-    const response = await fetch(`${FLASK_BASE_URL}/settings/save_character_setting`, {
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_CHARACTER_SETTING, {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
