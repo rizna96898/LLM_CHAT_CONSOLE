@@ -1,4 +1,3 @@
-const STORAGE_KEY = "char_list";
 const settingError = document.getElementById("settingError");
 let charList = [];
 let selectedId = null;
@@ -8,8 +7,6 @@ const characterIdInput = document.getElementById("characterIdInput");
 const characterNameInput = document.getElementById("characterNameInput");
 const characterSettingInput = document.getElementById("characterSettingInput");
 const tagList = document.getElementById("tagList");
-const FLASK_BASE_URL = "http://127.0.0.1:5000";
-const BASE_CHAT_PATH_KEY = "base_chat_path";
 
 let selectedIconFile = null;
 let selectedStandingFile = null;
@@ -637,29 +634,6 @@ async function saveCharacterSettingFile(characterId, characterName, settingText)
     throw new Error(data.message || "キャラクター設定の保存に失敗しました。");
     }
     return data;
-}
-
-function showToast(message) {
-
-    const toast = document.createElement("div");
-    toast.textContent = message;
-
-    toast.style.position = "fixed";
-    toast.style.top = "16px";
-    toast.style.right = "16px";
-    toast.style.padding = "10px 16px";
-    toast.style.background = "#22c55e";
-    toast.style.color = "#fff";
-    toast.style.borderRadius = "8px";
-    toast.style.zIndex = "9999";
-    toast.style.fontWeight = "700";
-    toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-    toast.remove();
-    }, 2500);
 }
 
 // 画面表示時呼ばれる

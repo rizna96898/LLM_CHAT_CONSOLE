@@ -30,3 +30,14 @@ const API_PATHS = {
   DELETE_SESSION: "/delete_session",
   LOAD_SESSION_LIST: "/load_session_list",
 };
+
+const STORAGE_KEY = "char_list";
+const FLASK_BASE_URL = "http://127.0.0.1:5000";
+const BASE_CHAT_PATH_KEY = "base_chat_path";
+
+// 定数化候補
+// "/settings/load_character_settings"
+// "/settings/get_template_character_yaml"
+// "/settings/load_image"
+// "/settings/save_image"
+// "/settings/save_character_setting"
