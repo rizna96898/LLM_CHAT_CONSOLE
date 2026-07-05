@@ -182,7 +182,7 @@ document.getElementById("saveButton").addEventListener("click", async () => {
         await savePlayerSettingFile(saveId, saveName, playerSettingInput.value);
         showToast("プレイヤーを保存しました", "success");
     } catch (error) {
-        alert(error.message);
+        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
         return;
     }
 
@@ -228,14 +228,14 @@ document.getElementById("initializeButton").addEventListener("click", async () =
         const data = await res.json();
 
         if (!data.ok) {
-            alert(data.message || "テンプレ取得失敗");
+            showToast(data.message || "テンプレ取得失敗", MESSAGE_TYPE.ERROR);
             return;
         }
 
         playerSettingInput.value = data.content;
 
     } catch (e) {
-        alert("サーバー接続エラー");
+        showToast(e || "サーバー接続エラー", MESSAGE_TYPE.ERROR);
     }
 });
 

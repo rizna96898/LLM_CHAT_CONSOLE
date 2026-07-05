@@ -16,7 +16,7 @@ async function loadTemplateToTextarea(endpoint, textareaId) {
 
     textarea.value = data.content;
   } catch (e) {
-    alert(e.message || "テンプレ取得失敗");
+    showToast(e.message || "テンプレ取得失敗", MESSAGE_TYPE.ERROR);
   }
 }
 
@@ -177,7 +177,7 @@ async function saveWorldSetting() {
       }),
     });
 
-    alert(data.message || "世界設定を保存しました。");
+    showToast(data.message || "テンプレ取得失敗", MESSAGE_TYPE.SUCCESS);
 
     pendingWorldList = pendingWorldList.filter(
       world => world.id !== worldId
@@ -188,7 +188,7 @@ async function saveWorldSetting() {
 
     localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, worldId);
   } catch (error) {
-    alert(error.message || "世界設定の保存に失敗しました。");
+    showToast(error.message || "世界設定の保存に失敗しました。", MESSAGE_TYPE.ERROR);
   }
 }
 
@@ -276,7 +276,7 @@ async function loadWorldSettingsFromServer(worldId) {
     applyWorldSettings(data);
   } catch (error) {
     console.error("世界設定の読み込みに失敗しました", error);
-    alert(error.message || "世界設定の読み込みに失敗しました。");
+    showToast(error.message || "世界設定の保存に失敗しました。", MESSAGE_TYPE.ERROR);
   }
 }
 

@@ -313,7 +313,7 @@ function renderSessionList(sessions, selectedSessionId) {
 
         } catch (error) {
             console.error(error);
-            alert("コピーに失敗しました");
+            showToast(error || "コピーに失敗しました", MESSAGE_TYPE.ERROR);
         }
         });
     }
@@ -350,7 +350,7 @@ function renderSessionList(sessions, selectedSessionId) {
 
         } catch (error) {
             console.error(error);
-            alert(error.message);
+            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
         }
         });
     }
@@ -421,7 +421,7 @@ async function startSessionByWorld(world) {
     saveSessionList(normalizedSessions);
     renderSessionList(normalizedSessions, "");
 
-    alert("世界を選択しました。\n新規チャットを押すか、セッション一覧から選択して続きを開始してください。");
+    showToast("世界を選択しました。\n新規チャットを押すか、セッション一覧から選択して続きを開始してください。", MESSAGE_TYPE.SUCCESS);
 
     return result;
 }
@@ -432,8 +432,8 @@ async function postNewChat() {
     const worldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
     
     if (!worldId) {
-    alert("先に世界を選択してください");
-    return;
+        showToast("先に世界を選択してください", MESSAGE_TYPE.INFO);
+        return;
     }
 
     if (newChatButton) {
@@ -504,13 +504,13 @@ async function postNewChat() {
     }
 
     } catch (error) {
-    console.error(error);
-    alert(error.message);
+        console.error(error);
+        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
     } finally {
-    if (newChatButton) {
-        newChatButton.disabled = false;
-        newChatButton.textContent = "新規チャット";
-    }
+        if (newChatButton) {
+            newChatButton.disabled = false;
+            newChatButton.textContent = "新規チャット";
+        }
     }
 }
 
@@ -529,12 +529,10 @@ function openWorldSelectPopup() {
 
     tr.addEventListener("click", async () => {
         try {
-        worldSelectPopup.classList.add("hidden");
-
-        await startSessionByWorld(world);
+            worldSelectPopup.classList.add("hidden");
+            await startSessionByWorld(world);
         } catch (error) {
-        console.error(error);
-        alert(error.message);
+            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
         }
     });
 
