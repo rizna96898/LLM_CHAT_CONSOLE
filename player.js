@@ -1,4 +1,3 @@
-const STORAGE_KEY = "player_list";
 const settingError = document.getElementById("settingError");
 let playerList = [];
 let selectedId = null;
@@ -8,8 +7,6 @@ const playerIdInput = document.getElementById("playerIdInput");
 const playerNameInput = document.getElementById("playerNameInput");
 const playerSettingInput = document.getElementById("playerSettingInput");
 const tagList = document.getElementById("tagList");
-const FLASK_BASE_URL = "http://127.0.0.1:5000";
-const BASE_CHAT_PATH_KEY = "base_chat_path";
 
 let selectedIconFile = null;
 let selectedStandingFile = null;

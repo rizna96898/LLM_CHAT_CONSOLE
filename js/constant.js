@@ -41,3 +41,12 @@ const BASE_CHAT_PATH_KEY = "base_chat_path";
 // "/settings/load_image"
 // "/settings/save_image"
 // "/settings/save_character_setting"
+
+const STORAGE_KEY = "player_list";
+const FLASK_BASE_URL = "http://127.0.0.1:5000";
+const BASE_CHAT_PATH_KEY = "base_chat_path";
+
+// 定数化候補
+// /settings/get_template_player_yaml
+// /settings/save_image
+// /settings/save_player_setting
