@@ -88,7 +88,7 @@ function renderEditor(char) {
 
 async function loadCharacterSettings(characterId) {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
-    const response = await fetch(`${FLASK_BASE_URL}API_PATHS.LOAD_CHARACTER_SETTINGS`, {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.LOAD_CHARACTER_SETTINGS, {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
@@ -209,13 +209,13 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     const saveSetting = characterSettingInput.value;
 
     try {
-    await saveImageFile("icon", selectedIconFile, saveId);
-    await saveImageFile("standing", selectedStandingFile, saveId);
-    await saveCharacterSettingFile(saveId, saveName, characterSettingInput.value);
-    showToast("キャラクターを保存しました", "success");
+        await saveImageFile("icon", selectedIconFile, saveId);
+        await saveImageFile("standing", selectedStandingFile, saveId);
+        await saveCharacterSettingFile(saveId, saveName, characterSettingInput.value);
+        showToast("キャラクターを保存しました", "success");
     } catch (error) {
-    alert(error.message);
-    return;
+        alert(error.message);
+        return;
     }
 
     char.id = saveId;

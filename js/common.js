@@ -50,7 +50,13 @@ async function requestJson(path, options = {}) {
   return data;
 }
 
-function showToast(message) {
+/**
+ * TODO そのうちresultの結果で表示色変更したりするので
+ * 第二引数が存在している
+ * @param {} message 
+ * @param {*} result 
+ */
+function showToast(message, result) {
   const toast = document.createElement("div");
 
   toast.textContent = message;

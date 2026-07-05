@@ -108,7 +108,7 @@ const newChatButton = document.getElementById("newChatButton");
 
 function getWorldList() {
     try {
-    return JSON.parse(localStorage.getItem("world_list") || "[]");
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORLD_LIST) || "[]");
     } catch {
     return [];
     }
@@ -146,7 +146,7 @@ function updateSummaryWorld() {
     const scenario = document.querySelector("#summaryScenario");
     if (!scenario) return;
 
-    const selectedWorldName = localStorage.getItem("selected_world_name") || "";
+    const selectedWorldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
     scenario.textContent = "選択中世界: " + (selectedWorldName || "未選択");
 }
 
@@ -161,7 +161,7 @@ function applySelectedSession(session) {
     "";
 
     if (sessionId) {
-    localStorage.setItem("selected_session_id", sessionId);
+    localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, sessionId);
     }
 
     localStorage.setItem("selected_session_name", sessionName);
@@ -199,8 +199,8 @@ function clearSessionList() {
 function normalizeSessionList(rawSessions) {
     if (!Array.isArray(rawSessions)) return [];
 
-    const selectedWorldId = localStorage.getItem("selected_world_id") || "";
-    const selectedWorldName = localStorage.getItem("selected_world_name") || "";
+    const selectedWorldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+    const selectedWorldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
 
     return rawSessions
     .filter(session => session && typeof session === "object")
@@ -283,7 +283,7 @@ function renderSessionList(sessions, selectedSessionId) {
 
         // セッション選択では、現使用セッションだけ更新する。
         // 世界ID/世界名は世界選択時の値を維持する。
-        localStorage.setItem("selected_session_id", session.session_id || "");
+        localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, session.session_id || "");
         localStorage.setItem("selected_session_name", displayName);
 
         updateSummaryWorld();
@@ -337,16 +337,16 @@ function renderSessionList(sessions, selectedSessionId) {
 
             saveSessionList(sessions);
 
-            const selectedSessionId = localStorage.getItem("selected_session_id") || "";
+            const selectedSessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
 
             if (selectedSessionId === sessionId) {
-            localStorage.removeItem("selected_session_id");
+            localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_ID);
             localStorage.removeItem("selected_session_name");
             resetMainView();
             updateSummaryWorld();
             }
 
-            renderSessionList(sessions, localStorage.getItem("selected_session_id") || "");
+            renderSessionList(sessions, localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "");
 
         } catch (error) {
             console.error(error);
@@ -361,8 +361,7 @@ function renderSessionList(sessions, selectedSessionId) {
 }
 
 async function postWorldStart(world) {
-    const FLASK_BASE_URL = "http://192.168.10.111:5000";
-    const response = await fetch(FLASK_BASE_URL + "/world_start", {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.WORLD_START, {
     method: "POST",
     headers: {
         "Content-Type": "application/json",
@@ -382,9 +381,8 @@ async function postWorldStart(world) {
 }
 
 async function startNewChatBySessionId(sessionId) {
-    const FLASK_BASE_URL = "http://192.168.10.111:5000";
 
-    const response = await fetch(FLASK_BASE_URL + "/new_chat", {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
     method: "POST",
     headers: {
         "Content-Type": "application/json",
@@ -412,9 +410,9 @@ async function startSessionByWorld(world) {
     const worldName = result.world_name || world.name || "";
     const sessions = Array.isArray(result.sessions) ? result.sessions : [];
 
-    localStorage.setItem("selected_world_id", worldId);
-    localStorage.setItem("selected_world_name", worldName);
-    localStorage.removeItem("selected_session_id");
+    localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, worldId);
+    localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_NAME, worldName);
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_ID);
     localStorage.removeItem("selected_session_name");
 
     updateSummaryWorld();
@@ -429,11 +427,9 @@ async function startSessionByWorld(world) {
 }
 
 async function postNewChat() {
-    const BASE_CHAT_PATH_KEY = "base_chat_path";
-    const FLASK_BASE_URL = "http://192.168.10.111:5000";
-    const basePath = localStorage.getItem(BASE_CHAT_PATH_KEY)
-    const worldId = localStorage.getItem("selected_world_id") || "";
-    const worldName = localStorage.getItem("selected_world_name") || "";
+    const basePath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH)
+    const worldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+    const worldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
     
     if (!worldId) {
     alert("先に世界を選択してください");
@@ -446,7 +442,7 @@ async function postNewChat() {
     }
 
     try {
-    const response = await fetch(FLASK_BASE_URL + "/chat_startup", {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT_STARTUP, {
         method: "POST",
         headers: {
         "Content-Type": "application/json",
@@ -483,7 +479,7 @@ async function postNewChat() {
     resetMainView();
     applySelectedSession(session);
 
-    const responseNewChat = await fetch(FLASK_BASE_URL + "/new_chat", {
+    const responseNewChat = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
         method: "POST",
         headers: {
         "Content-Type": "application/json",
@@ -617,11 +613,10 @@ function appendChatMessage(name, text, avatarText = "") {
 }
 
 async function deleteSession(sessionId) {
-    const FLASK_BASE_URL = "http://192.168.10.111:5000";
 
     if (!sessionId) return;
 
-    const response = await fetch(FLASK_BASE_URL + "/delete_session", {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.DELETE_SESSION, {
     method: "POST",
     headers: {
         "Content-Type": "application/json",
@@ -643,8 +638,8 @@ async function deleteSession(sessionId) {
 async function initializeMainViewFromLocalStorage() {
     resetMainView();
 
-    const selectedWorldId = localStorage.getItem("selected_world_id") || "";
-    const selectedWorldName = localStorage.getItem("selected_world_name") || "";
+    const selectedWorldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+    const selectedWorldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
 
     console.log("select", selectedWorldId);
     updateSummaryWorld();
@@ -658,7 +653,7 @@ async function initializeMainViewFromLocalStorage() {
     }
 
     try {
-    const response = await fetch("http://192.168.10.111:5000/load_session_list", {
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.LOAD_SESSION_LIST, {
         method: "POST",
         headers: {
         "Content-Type": "application/json"
@@ -702,13 +697,12 @@ const summaryCheck = document.getElementById("summaryCheck");
 const summaryServerStatus = document.getElementById("summaryServerStatus");
 
 async function checkServerHealth() {
-    const FLASK_BASE_URL = "http://192.168.10.111:5000";
 
     summaryServerStatus.textContent = "確認中...";
     summaryServerStatus.className = "status-wait";
 
     try {
-    const response = await fetch(FLASK_BASE_URL + "/health");
+    const response = await fetch(getFlaskBaseUrl() + API_PATHS.HEALTH);
 
     if (!response.ok) {
         throw new Error("health request failed");
