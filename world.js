@@ -1,4 +1,3 @@
-const FLASK_BASE_URL = "http://127.0.0.1:5000";
 async function loadTemplateToTextarea(endpoint, textareaId) {
 const textarea = document.getElementById(textareaId);
 
@@ -55,8 +54,6 @@ loadTemplateToTextarea(
 );
 });
 
-// let lastReflectedIncludeText = "";
-
 function getWorldList() {
 try {
     const raw = localStorage.getItem("world_list");
@@ -65,11 +62,6 @@ try {
 } catch {
     return [];
 }
-}
-
-function setError(id, message) {
-const el = document.getElementById(id);
-if (el) el.textContent = message || "";
 }
 
 function clearWorldErrors() {
@@ -221,58 +213,6 @@ localStorage.setItem("selected_world_id", worldId);
 }
 
 document.getElementById("saveWorldButton")?.addEventListener("click", saveWorldSetting);
-
-function validateSimpleYamlText(text) {
-const errors = [];
-
-const lines = text.split(/\r?\n/);
-
-lines.forEach((line, index) => {
-    const lineNo = index + 1;
-    const trimmed = line.trim();
-
-    if (trimmed === "") return;
-    if (trimmed.startsWith("#")) return;
-
-    if (line.includes("\t")) {
-    errors.push(`${lineNo}行目: タブは使えません`);
-    return;
-    }
-
-    // 「- 項目: 内容」形式を許可する
-    let checkLine = trimmed;
-    if (checkLine.startsWith("- ")) {
-    checkLine = checkLine.slice(2).trim();
-    }
-
-    const colonCount = (checkLine.match(/:/g) || []).length;
-
-    if (colonCount === 0) {
-    errors.push(`${lineNo}行目: 「項目: 内容」の形にしてください`);
-    return;
-    }
-
-    if (colonCount >= 2) {
-    errors.push(`${lineNo}行目: 「:」は1行に1つまでにしてください`);
-    return;
-    }
-
-    const [key, value] = checkLine.split(":");
-
-    if (!key.trim()) {
-    errors.push(`${lineNo}行目: 項目名が空です`);
-    return;
-    }
-
-    // 「世界の登場人物:」みたいな親項目は許可する
-    // なので value が空でもエラーにしない
-});
-
-return errors;
-}
-
-const WORLD_LIST_STORAGE_KEY = "world_list";
-
 function loadWorldList() {
 try {
     const raw = localStorage.getItem(WORLD_LIST_STORAGE_KEY);
@@ -341,7 +281,6 @@ clearWorldForm();
 }
 
 async function loadWorldSettingsFromServer(worldId) {
-console.log("loadWorldSettingsFromServer呼ばれた", worldId);
 if (!worldId) return;
 
 try {
@@ -379,16 +318,9 @@ for (const key of keys) {
 return "";
 }
 
-function setTextareaValue(id, value) {
-const textarea = document.getElementById(id);
-if (textarea) textarea.value = value || "";
-}
-
 function applyWorldSettings(data) {
 clearWorldErrors();
 clearParticipantTable();
-
-console.log("中身", data);
 
 worldIdInput.value = data.world_id;
 worldNameInput.value = data.world_name;
@@ -425,7 +357,7 @@ setTextareaValue(
     "supplementInput",
     getWorldSettingValue(data, "補足", "supplement")
 );
-console.log(data);
+
 setTextareaValue(
     "startMessageInput",
     getWorldSettingValue(data, "開始メッセージ", "start_message")
@@ -434,7 +366,7 @@ setTextareaValue(
 }
 
 async function selectWorld(worldId) {
-console.log("selectWorld呼ばれた", worldId);
+
 const worldList = [...loadWorldList(), ...pendingWorldList];
 const world = worldList.find(item => item.id === worldId);
 if (!world) return;
@@ -648,26 +580,6 @@ return {
 };
 }
 
-function parseKeyValue(line, lineNo, errors) {
-const colonCount = (line.match(/:/g) || []).length;
-
-if (colonCount !== 1) {
-    errors.push(`${lineNo}行目: 「項目: 内容」の形にしてください`);
-    return null;
-}
-
-const [key, value] = line.split(":");
-
-if (!key.trim()) {
-    errors.push(`${lineNo}行目: 項目名が空です`);
-    return null;
-}
-
-return {
-    key: key.trim(),
-    value: value.trim()
-};
-}
 function validateParticipants(items) {
 const errors = [];
 const rows = [];
@@ -760,15 +672,7 @@ return {
 };
 }
 
-function getStorageArray(key) {
-try {
-    const raw = localStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-} catch {
-    return [];
-}
-}
+
 function renderParticipantTable(rows) {
 const body = document.querySelector(".participant-body");
 if (!body) return;
@@ -787,14 +691,3 @@ rows.forEach(row => {
     body.appendChild(div);
 });
 }
-
-function escapeHtml(value) {
-return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-// window.resetWorldPageOnOpen = resetWorldPageOnOpen;

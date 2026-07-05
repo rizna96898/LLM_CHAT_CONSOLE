@@ -50,3 +50,17 @@ const BASE_CHAT_PATH_KEY = "base_chat_path";
 // /settings/get_template_player_yaml
 // /settings/save_image
 // /settings/save_player_setting
+
+const FLASK_BASE_URL = "http://127.0.0.1:5000";
+const WORLD_LIST_STORAGE_KEY = "world_list";
+
+// 定数化候補
+// "base_chat_path"
+// "selected_world_id"
+// "player_list"
+// "char_list"
+// /settings/get_template_world_include_player_yaml
+// /settings/get_template_world_goal_setting_yaml
+// /settings/get_template_world_parameter_setting_yaml
+// /settings/save_world_setting
+// /settings/load_world_settings

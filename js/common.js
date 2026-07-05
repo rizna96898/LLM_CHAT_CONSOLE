@@ -72,3 +72,101 @@ function showToast(message) {
     toast.remove();
     }, 2500);
 }
+
+function getStorageArray(key) {
+  try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+  } catch {
+      return [];
+  }
+}
+
+function setTextareaValue(id, value) {
+  const textarea = document.getElementById(id);
+  if (textarea) textarea.value = value || "";
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function setError(id, message) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = message || "";
+}
+
+function validateSimpleYamlText(text) {
+  const errors = [];
+
+  const lines = text.split(/\r?\n/);
+
+  lines.forEach((line, index) => {
+    const lineNo = index + 1;
+    const trimmed = line.trim();
+
+    if (trimmed === "") return;
+    if (trimmed.startsWith("#")) return;
+
+    if (line.includes("\t")) {
+    errors.push(`${lineNo}行目: タブは使えません`);
+    return;
+    }
+
+    // 「- 項目: 内容」形式を許可する
+    let checkLine = trimmed;
+    if (checkLine.startsWith("- ")) {
+    checkLine = checkLine.slice(2).trim();
+    }
+
+    const colonCount = (checkLine.match(/:/g) || []).length;
+
+    if (colonCount === 0) {
+    errors.push(`${lineNo}行目: 「項目: 内容」の形にしてください`);
+    return;
+    }
+
+    if (colonCount >= 2) {
+    errors.push(`${lineNo}行目: 「:」は1行に1つまでにしてください`);
+    return;
+    }
+
+    const [key, value] = checkLine.split(":");
+
+    if (!key.trim()) {
+    errors.push(`${lineNo}行目: 項目名が空です`);
+    return;
+    }
+
+    // 「世界の登場人物:」みたいな親項目は許可する
+    // なので value が空でもエラーにしない
+  });
+  return errors;
+}
+
+function parseKeyValue(line, lineNo, errors) {
+  const colonCount = (line.match(/:/g) || []).length;
+
+  if (colonCount !== 1) {
+      errors.push(`${lineNo}行目: 「項目: 内容」の形にしてください`);
+      return null;
+  }
+
+  const [key, value] = line.split(":");
+
+  if (!key.trim()) {
+      errors.push(`${lineNo}行目: 項目名が空です`);
+      return null;
+  }
+
+  return {
+      key: key.trim(),
+      value: value.trim()
+  };
+}
