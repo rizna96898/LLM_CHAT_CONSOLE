@@ -1,3 +1,7 @@
+function openWindowPage(src, id) {
+    window.open(src, id);
+}
+
 function getFlaskBaseUrl() {
   const input = document.getElementById("flaskBaseUrlInput");
 
