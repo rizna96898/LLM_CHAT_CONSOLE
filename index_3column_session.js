@@ -135,8 +135,11 @@ function showStandeeImage(imagePath, altText = "") {
 
     const img = document.createElement("img");
     img.className = "stand-img";
-    img.src = imagePath;
     img.alt = altText;
+
+    // 立ち絵が無いキャラクター（プレイヤー等）は初期表示へ戻す
+    img.onerror = resetStandee;
+    img.src = imagePath;
 
     /*
      * 文字や以前の画像をすべて消し、
@@ -155,10 +158,14 @@ async function selectMessage(event) {
         return;
     }
 
-    const rowElementBubble = event.target.closest(".bubble");
+    // アイコンは吹き出しの外にあるので、メッセージ行から吹き出しを探す
     const rowElementMessage = event.target.closest(".message");
 
     if (!rowElementMessage) return;
+
+    const rowElementBubble = rowElementMessage.querySelector(".bubble, .bubble_user");
+
+    if (!rowElementBubble) return;
 
     const lineId = rowElementBubble.dataset.lineId;
     const characterId = rowElementBubble.dataset.characterId;
@@ -244,9 +251,11 @@ async function selectMessage(event) {
         return;
     }
 
+    if (!characterId) return;
+
     showStandeeImage(
-        "characters/standing/shirai_yui/shirai_yui_standing.png",
-        "白井 結"
+        `characters/standing/${characterId}/${characterId}_standing.png`,
+        name
     );
 }
 
