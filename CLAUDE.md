@@ -67,5 +67,5 @@ YAMLを入力する欄の検証は `js/common.js` の `validateSimpleYamlText` �
 ## 現状の注意点
 
 - `README.txt` は設定画面を追加したときのメモで、`flask_settings_api.py` は存在しない。該当のAPIは `LocalFlaskServer` に実装されている。
-- サーバー側のレスポンスの形は統一されていない（`{"ok": true}`、`{"status": "ok"}`、`{"result": "error"}`、`{"error": ...}`）。画面側で結果を判定するときは、呼び先が実際に何を返すかをサーバー側のコードで確認する。
+- サーバーのレスポンスは、成功 `{"ok": true, ...}`、失敗 `{"ok": false, "message": "..."}` ＋HTTPステータスに統一している。画面側は `ok` で判定し、失敗時は `message` を表示する。
 - `/chat` と `/re_chat` はサーバー側が作りかけで、話者は `shirai_yui` 固定、`/re_chat` は固定文を返す。
