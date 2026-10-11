@@ -69,4 +69,3 @@ YAMLを入力する欄の検証は `js/common.js` の `validateSimpleYamlText` �
 - `README.txt` は設定画面を追加したときのメモで、`flask_settings_api.py` は存在しない。該当のAPIは `LocalFlaskServer` に実装されている。
 - サーバー側のレスポンスの形は統一されていない（`{"ok": true}`、`{"status": "ok"}`、`{"result": "error"}`、`{"error": ...}`）。画面側で結果を判定するときは、呼び先が実際に何を返すかをサーバー側のコードで確認する。
 - `/chat` と `/re_chat` はサーバー側が作りかけで、話者は `shirai_yui` 固定、`/re_chat` は固定文を返す。
-- 設定画面の「エクスプローラー」「SystemSettingsYamlを編集」「モデルロード」と、各テンプレートYAMLの取得（`/settings/get_template_*`）は、サーバー側の関数の引数が呼び出しと合っておらず、コード上はエラーになる（詳細は `LocalFlaskServer` の `CLAUDE.md`）。
