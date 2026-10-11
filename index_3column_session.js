@@ -191,49 +191,48 @@ async function selectMessage(event) {
 
             const resultMessage = await responseMessage.json();
 
-            if (
-                responseMessage.ok &&
-                resultMessage.status === "ok"
-            ) {
-                console.log("返却内容", resultMessage);
-
-                const messageList = resultMessage.message_list;
-                let insertElement = rowElementMessage;
-
-                for (const messageObj of messageList) {
-                    console.log("要素", messageObj);
-                    if (messageObj.icon_data.character_id === "player") {
-                        insertElement = insertChatMessageByUser(
-                            insertElement,
-                            messageObj.line_id || "",
-                            messageObj.icon_data.character_id || "",
-                            messageObj.icon_data.character_name,
-                            messageObj.message || "",
-                            "シ"
-                        );
-                    } else if (messageObj.icon_data.character_id === "system") {
-                        insertElement = insertChatMessageBySystem(
-                            insertElement,
-                            messageObj.line_id || "",
-                            messageObj.icon_data.character_id || "",
-                            messageObj.icon_data.character_name,
-                            messageObj.message || "",
-                            "シ"
-                        );
-                    } else {
-                        insertElement = insertChatMessage(
-                            insertElement,
-                            messageObj.line_id || "",
-                            messageObj.icon_data.character_id || "",
-                            messageObj.icon_data.character_name,
-                            messageObj.message || "",
-                            "シ"
-                        );
-                    }
-                }
-
-                rowElementMessage.remove();
+            if (!responseMessage.ok || !resultMessage.ok) {
+                throw new Error(resultMessage.message || "メッセージの読み込みに失敗しました");
             }
+
+            console.log("返却内容", resultMessage);
+
+            const messageList = resultMessage.message_list;
+            let insertElement = rowElementMessage;
+
+            for (const messageObj of messageList) {
+                console.log("要素", messageObj);
+                if (messageObj.icon_data.character_id === "player") {
+                    insertElement = insertChatMessageByUser(
+                        insertElement,
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || "",
+                        "シ"
+                    );
+                } else if (messageObj.icon_data.character_id === "system") {
+                    insertElement = insertChatMessageBySystem(
+                        insertElement,
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || "",
+                        "シ"
+                    );
+                } else {
+                    insertElement = insertChatMessage(
+                        insertElement,
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || "",
+                        "シ"
+                    );
+                }
+            }
+
+            rowElementMessage.remove();
         } catch (error) {
             console.error(error);
 
@@ -288,35 +287,37 @@ async function selectSession(event) {
 
         const resultSession = await responseSession.json();
 
-        if (responseSession.ok && resultSession.status === "ok") {
-            console.log("返却内容", resultSession);
+        if (!responseSession.ok || !resultSession.ok) {
+            throw new Error(resultSession.message || "セッションの読み込みに失敗しました");
+        }
 
-            clearChatLog();
-            const messageList = resultSession.message_list;
-            for (const messageObj of messageList) {
-                console.log("要素", messageObj);
-                if (messageObj.icon_data.character_id === "player") {
-                    appendChatMessageByUser(
-                        messageObj.line_id || "",
-                        messageObj.icon_data.character_id || "",
-                        messageObj.icon_data.character_name,
-                        messageObj.message || ""
-                    );
-                } else if (messageObj.icon_data.character_id === "system") {
-                    appendChatMessageBySystem(
-                        messageObj.line_id || "",
-                        messageObj.icon_data.character_id || "",
-                        messageObj.icon_data.character_name,
-                        messageObj.message || ""
-                    );
-                } else {
-                    appendChatMessage(
-                        messageObj.line_id || "",
-                        messageObj.icon_data.character_id || "",
-                        messageObj.icon_data.character_name,
-                        messageObj.message || ""
-                    );
-                }
+        console.log("返却内容", resultSession);
+
+        clearChatLog();
+        const messageList = resultSession.message_list;
+        for (const messageObj of messageList) {
+            console.log("要素", messageObj);
+            if (messageObj.icon_data.character_id === "player") {
+                appendChatMessageByUser(
+                    messageObj.line_id || "",
+                    messageObj.icon_data.character_id || "",
+                    messageObj.icon_data.character_name,
+                    messageObj.message || ""
+                );
+            } else if (messageObj.icon_data.character_id === "system") {
+                appendChatMessageBySystem(
+                    messageObj.line_id || "",
+                    messageObj.icon_data.character_id || "",
+                    messageObj.icon_data.character_name,
+                    messageObj.message || ""
+                );
+            } else {
+                appendChatMessage(
+                    messageObj.line_id || "",
+                    messageObj.icon_data.character_id || "",
+                    messageObj.icon_data.character_name,
+                    messageObj.message || ""
+                );
             }
         }
 
@@ -646,7 +647,7 @@ async function deleteSelectedSessions() {
     const result = await deleteSession(selectedSessionIds);
     
     console.log("削除実施後");
-    if (result.status === "ok") {
+    if (result.ok) {
         console.log("分岐通過後");
         // セッションリスト全体から選択中のセッションを外したもの
         // ここでは予定
@@ -941,7 +942,7 @@ async function postWorldStart(world) {
 
     const result = await response.json();
 
-    if (!response.ok || result.result !== "ok") {
+    if (!response.ok || !result.ok) {
     throw new Error(result.message || "world_start に失敗しました");
     }
     return result;
@@ -961,7 +962,7 @@ async function startNewChatBySessionId(sessionId) {
 
     const result = await response.json();
 
-    if (!response.ok || result.status !== "ok") {
+    if (!response.ok || !result.ok) {
     throw new Error(result.message || "new_chat に失敗しました");
     }
 
@@ -1026,14 +1027,14 @@ async function startUp(worldId) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                base_path: basePath,
+                base_chat_path: basePath,
                 world_id: worldId,
             }),
         });
 
         const result = await response.json();
 
-        if (!response.ok || result.status !== "ok") {
+        if (!response.ok || !result.ok) {
             throw new Error(result.message || "新規セッション作成に失敗しました");
         }
 
@@ -1109,18 +1110,20 @@ async function postNewChat() {
 
         const resultNewChat = await responseNewChat.json();
 
-        if (responseNewChat.ok && resultNewChat.status === "ok") {
-            console.log("返却内容", resultNewChat);
-
-            clearChatLog();
-
-            appendChatMessage(
-                resultNewChat.line_id || "",
-                resultNewChat.icon_data.character_id,
-                resultNewChat.icon_data.character_name,
-                resultNewChat.message || ""
-            );
+        if (!responseNewChat.ok || !resultNewChat.ok) {
+            throw new Error(resultNewChat.message || "new_chat に失敗しました");
         }
+
+        console.log("返却内容", resultNewChat);
+
+        clearChatLog();
+
+        appendChatMessage(
+            resultNewChat.line_id || "",
+            resultNewChat.icon_data.character_id,
+            resultNewChat.icon_data.character_name,
+            resultNewChat.message || ""
+        );
 
     } catch (error) {
         console.error(error);
@@ -1173,16 +1176,18 @@ async function postChat() {
 
             const resultChat = await responseChat.json();
 
-            if (responseChat.ok && resultChat.status === "ok") {
-                console.log("返却内容", resultChat);
-
-                appendChatMessage(
-                    resultChat.line_id || "",
-                    resultChat.icon_data.character_id,
-                    resultChat.icon_data.character_name,
-                    resultChat.message || "",
-                );
+            if (!responseChat.ok || !resultChat.ok) {
+                throw new Error(resultChat.message || "発言に失敗しました");
             }
+
+            console.log("返却内容", resultChat);
+
+            appendChatMessage(
+                resultChat.line_id || "",
+                resultChat.icon_data.character_id,
+                resultChat.icon_data.character_name,
+                resultChat.message || "",
+            );
 
         } catch (error) {
             console.error(error);
@@ -1240,16 +1245,18 @@ async function postReChat() {
 
             const resultReChat = await responseReChat.json();
 
-            if (responseReChat.ok && resultReChat.status === "ok") {
-                console.log("返却内容", responseReChat);
-
-                appendChatMessage(
-                    resultReChat.line_id || "",
-                    resultReChat.icon_data.character_id,
-                    resultReChat.icon_data.character_name,
-                    resultReChat.message || "",
-                );
+            if (!responseReChat.ok || !resultReChat.ok) {
+                throw new Error(resultReChat.message || "再送に失敗しました");
             }
+
+            console.log("返却内容", responseReChat);
+
+            appendChatMessage(
+                resultReChat.line_id || "",
+                resultReChat.icon_data.character_id,
+                resultReChat.icon_data.character_name,
+                resultReChat.message || "",
+            );
 
         } catch (error) {
             console.error(error);
@@ -1507,7 +1514,7 @@ async function deleteSession(sessionIds) {
     const result = await response.json();
 
     console.log("削除結果", result);
-    if (!response.ok ||result.status !== "ok") {
+    if (!response.ok || !result.ok) {
         throw new Error(
             result.message ||
             "セッション削除に失敗しました"
@@ -1557,7 +1564,7 @@ async function initializeMainViewFromLocalStorage() {
 
     const result = await response.json().catch(() => ({}));
 
-    if (!response.ok || result.status === "error" || result.ok === false) {
+    if (!response.ok || !result.ok) {
         console.error(result.message || "セッション一覧の読み込みに失敗しました");
         saveSessionList([]);
         clearSessionList();
@@ -1597,7 +1604,7 @@ async function checkServerHealth() {
 
         const result = await response.json();
 
-        if (result.status === "ok") {
+        if (result.ok) {
             summaryServerStatus.textContent = "●接続中";
             summaryServerStatus.className = "status-ok";
         } else {
