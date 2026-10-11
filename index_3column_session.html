@@ -71,8 +71,15 @@
     <main class="workspace" id="workspace">
       <section class="chat-area">
         <section class="panel">
-          <div class="panel-header"><strong>チャットログ</strong><div class="panel-tools"><button class="mini-button" type="button">−</button><button class="mini-button" type="button">□</button></div></div>
-          <div class="panel-body chat-log">
+          <div class="panel-header"><strong>チャットログ</strong>
+            <div class="panel-tools">
+              <button class="mini-button" type="button" id="chatScrollTopButton">▲</button>
+              <button class="mini-button" type="button" id="chatScrollBottomButton">▼</button>
+              <button class="mini-button" type="button">−</button>
+              <button class="mini-button" type="button">□</button>
+            </div>
+          </div>
+          <div class="panel-body chat-log" id="messageList">
             <div class="message"><div class="avatar">結</div><div class="bubble"><div class="name">白井 結</div>ここに会話ログが入ります。3カラム版なので左幅は少し狭めです。</div></div>
             <div class="message"><div class="avatar">医</div><div class="bubble"><div class="name">プレイヤー</div>中央の立ち絵を大きく見せつつ、右側に設定とワールド情報を置く想定です。</div></div>
           </div>
@@ -84,8 +91,8 @@
           <textarea class="chat-input" placeholder="チャット入力枠"></textarea>
           <div class="bottom-tools">
             <button class="tool-button" type="button" id="newChatButton">新規チャット</button>
-            <button class="tool-button" type="button">再送</button>
-            <button class="tool-button primary" type="button">発言</button>
+            <button class="tool-button" type="button" id="reChatButton">再送</button>
+            <button class="tool-button primary" type="button" id="chatButton">発言</button>
             <button class="tool-button" type="button">持ち物</button>
             <button class="tool-button" type="button">ステータス</button>
             <span style="color: var(--muted);">ショートカット設定・クリア条件などは後で追加</span>
@@ -97,9 +104,14 @@
 
       <section class="standee-area">
         <section class="panel">
-          <div class="panel-header"><strong>発言キャラクター立ち絵</strong></div>
+          <div class="panel-header">
+            <strong>発言キャラクター立ち絵</strong>
+          </div>
+
           <div class="panel-body standee-stage">
-            <div class="standee-box">発言キャラクター立ち絵
+            <div class="standee-box">
+              発言キャラクター立ち絵
+            </div>
           </div>
         </section>
       </section>
@@ -113,16 +125,38 @@
             <div class="settings-session-pane">
               <div class="settings-pane-title">
                 <strong>セッション選択</strong>
-                <button class="new-session-button" type="button">★ 全削除</button>
+
+                <button
+                  id="deleteSelectedSessionsButton"
+                  class="new-session-button"
+                  type="button"
+                  disabled
+                >
+                  選択削除
+                </button>
               </div>
 
               <div class="session-table">
                 <div class="session-table-header">
+                  <label
+                    class="session-select-all"
+                    title="すべて選択／解除"
+                  >
+                    <input
+                      id="selectAllSessionsCheckbox"
+                      type="checkbox"
+                    />
+                  </label>
+
                   <span>表示名</span>
                   <span>更新</span>
                   <span></span>
                 </div>
-                <div class="session-list" id="sessionList"></div>
+
+                <div
+                  class="session-list"
+                  id="sessionList"
+                ></div>
               </div>
             </div>
 

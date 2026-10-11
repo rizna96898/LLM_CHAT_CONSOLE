@@ -1,6 +1,7 @@
 const settingsTitle = document.getElementById("settingsTitle");
 const basePathInput = document.getElementById("basePathInput");
 const baseChatPathInput = document.getElementById("baseChatPathInput");
+const flaskBaseUrlInput = document.getElementById("flaskBaseUrlInput");
 const selectBasePathButton = document.getElementById("selectBasePathButton");
 const healthCheckButton = document.getElementById("healthCheckButton");
 const openSystemYamlButton = document.getElementById("openSystemYamlButton");
@@ -23,7 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
     basePathInput.value = saved;
   }
 
-  baseChatPathInput.value = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+  baseChatPathInput.value =
+    localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+
+  flaskBaseUrlInput.value =
+    localStorage.getItem(STORAGE_KEYS.FLASK_BASE_URL) || "";
 });
 
 function setServerDependentButtonsEnabled(enabled) {
@@ -142,7 +147,7 @@ loadModelButton.addEventListener("click", async () => {
 applyButton.addEventListener("click", () => {
   localStorage.setItem(STORAGE_KEYS.BASE_PATH, basePathInput.value.trim());
   localStorage.setItem(STORAGE_KEYS.BASE_CHAT_PATH, baseChatPathInput.value.trim());
-
+  localStorage.setItem(STORAGE_KEYS.FLASK_BASE_URL,flaskBaseUrlInput.value.trim());
   window.parent.postMessage({
     type: "settings_applied",
     message: "設定　適用しました。",

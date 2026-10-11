@@ -5,28 +5,322 @@ const toggleTopFromFloat = document.getElementById('toggleTopFromFloat');
 const layoutToggleTop = document.getElementById('layoutToggleTop');
 const floatingMenu = document.getElementById('floatingMenu');
 const closeFloat = document.getElementById('closeFloat');
-const worldToggleButton = document.getElementById('worldToggleButton');
 const worldOverlay = document.getElementById('worldOverlay');
 const closeWorldOverlay = document.getElementById('closeWorldOverlay');
 const openWorldWindow = document.getElementById('openWorldWindow');
-const characterToggleButton = document.getElementById('characterToggleButton');
 const characterOverlay = document.getElementById('characterOverlay');
 const closeCharacterOverlay = document.getElementById('closeCharacterOverlay');
 const openCharacterWindow = document.getElementById('openCharacterWindow');
-const tagManageButton = document.getElementById('tagManageButton');
 const tagManagerWindow = document.getElementById('tagManagerWindow');
 const closeTagManager = document.getElementById('closeTagManager');
 const closeTagManagerFooter = document.getElementById('closeTagManagerFooter');
-const settingsToggleButton = document.getElementById('settingsToggleButton');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
 const openSettingsWindow = document.getElementById('openSettingsWindow');
 const characterFrame = document.querySelector('.character-frame');
 const worldFrame = document.querySelector('.world-frame');
-const playerToggleButton = document.getElementById('playerToggleButton');
 const playerOverlay = document.getElementById('playerOverlay');
 const closePlayerOverlay = document.getElementById('closePlayerOverlay');
 const openPlayerWindow = document.getElementById('openPlayerWindow');
+
+// 上部メニューボタン
+const tagManageButton = document.getElementById('tagManageButton');
+const worldToggleButton = document.getElementById('worldToggleButton');
+const characterToggleButton = document.getElementById('characterToggleButton');
+const settingsToggleButton = document.getElementById('settingsToggleButton');
+const playerToggleButton = document.getElementById('playerToggleButton');
+const summaryCheck = document.getElementById("summaryCheck");
+const summaryServerStatus = document.getElementById("summaryServerStatus");
+
+// メイン画面上のボタン
+const worldSelectButton = document.getElementById("worldSelectButton");
+const worldSelectPopup = document.getElementById("worldSelectPopup");
+const closeWorldSelectPopup = document.getElementById("closeWorldSelectPopup");
+const worldSelectTableBody = document.getElementById("worldSelectTableBody");
+const sessionList = document.getElementById("sessionList");
+const selectAllSessionsCheckbox =　document.getElementById("selectAllSessionsCheckbox");
+const deleteSelectedSessionsButton =　document.getElementById("deleteSelectedSessionsButton");
+const messageList = document.getElementById("messageList");
+const newChatButton = document.getElementById("newChatButton");
+const reChatButton = document.getElementById("reChatButton");
+const chatButton = document.getElementById("chatButton");
+const chatScrollTopButton = document.getElementById("chatScrollTopButton");
+const chatScrollBottomButton = document.getElementById("chatScrollBottomButton");
+
+// メイン上部のボタン登録
+openWorldWindow.addEventListener('click', function () {openWindowPage('world.html', 'worldCard')});
+openCharacterWindow.addEventListener('click', function () {openWindowPage('character.html', 'characterCard')});
+openSettingsWindow.addEventListener('click', function () {openWindowPage('settings.html', 'settingsWindow')});
+openPlayerWindow.addEventListener('click', function () {openWindowPage('player.html', 'playerWindow')});
+
+tagManageButton.addEventListener('click', () => setOverlay(tagManagerWindow.classList.contains('hidden'), tagManagerWindow, 'tag-manager-open'));
+toggleTop.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
+topbar.addEventListener('mouseenter', () => { if (topbar.classList.contains('collapsed')) topbar.classList.add('menu-open'); });
+topbar.addEventListener('mouseleave', () => topbar.classList.remove('menu-open'));
+toggleTopFromFloat.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
+layoutToggleTop.addEventListener('click', () => floatingMenu.classList.toggle('hidden'));
+closeFloat.addEventListener('click', () => floatingMenu.classList.add('hidden'));
+worldToggleButton.addEventListener('click', () => {
+    reloadWorldFrame();
+    setOverlay(worldOverlay.classList.contains('hidden'), worldOverlay, 'world-open');
+});
+closeWorldOverlay.addEventListener('click', () => setOverlay(false, worldOverlay, 'world-open'));
+characterToggleButton.addEventListener('click', () => { reloadCharacterFrame(); setOverlay(characterOverlay.classList.contains('hidden'), characterOverlay, 'character-open'); });
+closeCharacterOverlay.addEventListener('click', () => setOverlay(false, characterOverlay, 'character-open'));
+settingsToggleButton.addEventListener('click', () => setOverlay(settingsOverlay.classList.contains('hidden'), settingsOverlay, 'settings-open'));
+closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsOverlay, 'settings-open'));
+playerToggleButton.addEventListener('click', () => setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'));
+closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
+closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
+closeTagManagerFooter.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
+summaryCheck.addEventListener("click", checkServerHealth);
+
+/**
+ * 画面上のボタンイベント登録
+ */
+worldSelectButton.addEventListener("click", openWorldSelectPopup);
+closeWorldSelectPopup.addEventListener("click", closeWorldSelect);
+newChatButton.addEventListener("click", postNewChat);
+chatButton.addEventListener("click", postChat);
+reChatButton.addEventListener("click", postReChat);
+sessionList.addEventListener("click", selectSession);
+messageList.addEventListener("click", selectMessage);
+selectAllSessionsCheckbox.addEventListener("change", changeAllSessionSelections);
+deleteSelectedSessionsButton.addEventListener("click", deleteSelectedSessions);
+chatScrollTopButton.addEventListener("click", () => scrollChat("top"));
+chatScrollBottomButton.addEventListener("click", () => scrollChat("bottom"));
+chatScrollBottomButton.addEventListener("click", () => scrollChat("bottom"));
+
+function scrollChat(scrollLine) {
+    const chatLog = document.querySelector(".chat-log");
+    if (!chatLog) return;
+
+    var line = 0;
+    if (scrollLine === "bottom") {
+        line = chatLog.scrollHeight
+    }
+    
+    chatLog.scrollTop = line;
+}
+window.addEventListener('message', (event) => {
+    if (!event.data || event.data.type !== 'settings_applied') return;
+    const title = document.getElementById('settingsTitle');
+    if (!title) return;
+    const original = title.textContent;
+    title.textContent = event.data.message;
+    title.style.color = '#0f7a2f';
+    setTimeout(() => { title.textContent = original; title.style.color = ''; }, 2000);
+});
+
+/**
+ * 立ち絵を初期表示へ戻す。
+ */
+function resetStandee() {
+    const stand = document.querySelector(".standee-box");
+    if (!stand) return;
+
+    stand.classList.remove("has-image");
+    stand.textContent = "発言キャラクター立ち絵";
+}
+
+/**
+ * 立ち絵画像を表示する。
+ *
+ * @param {string} imagePath 画像パス
+ * @param {string} altText 代替テキスト
+ */
+function showStandeeImage(imagePath, altText = "") {
+    const stand = document.querySelector(".standee-box");
+    if (!stand) return;
+
+    const img = document.createElement("img");
+    img.className = "stand-img";
+    img.src = imagePath;
+    img.alt = altText;
+
+    /*
+     * 文字や以前の画像をすべて消し、
+     * 今回の画像だけを子要素として配置する。
+     */
+    stand.replaceChildren(img);
+    stand.classList.add("has-image");
+}
+
+async function selectMessage(event) {
+    const sessionId =
+        localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+
+    // セッションIDチェック
+    if (!checkSessionId(sessionId)) {
+        return;
+    }
+
+    const rowElementBubble = event.target.closest(".bubble");
+    const rowElementMessage = event.target.closest(".message");
+
+    if (!rowElementMessage) return;
+
+    const lineId = rowElementBubble.dataset.lineId;
+    const characterId = rowElementBubble.dataset.characterId;
+    const nameElement = rowElementMessage.querySelector(".name");
+    const name = nameElement ? nameElement.innerText : "";
+
+    console.log("名前", characterId);
+    if (characterId === "system") {
+        try {
+            const responseMessage = await fetch(
+                getFlaskBaseUrl() + API_PATHS.SELECTED_MESSAGE,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        line_id: lineId,
+                    }),
+                }
+            );
+
+            const resultMessage = await responseMessage.json();
+
+            if (
+                responseMessage.ok &&
+                resultMessage.status === "ok"
+            ) {
+                console.log("返却内容", resultMessage);
+
+                const messageList = resultMessage.message_list;
+                let insertElement = rowElementMessage;
+
+                for (const messageObj of messageList) {
+                    console.log("要素", messageObj);
+                    if (messageObj.icon_data.character_id === "player") {
+                        insertElement = insertChatMessageByUser(
+                            insertElement,
+                            messageObj.line_id || "",
+                            messageObj.icon_data.character_id || "",
+                            messageObj.icon_data.character_name,
+                            messageObj.message || "",
+                            "シ"
+                        );
+                    } else if (messageObj.icon_data.character_id === "system") {
+                        insertElement = insertChatMessageBySystem(
+                            insertElement,
+                            messageObj.line_id || "",
+                            messageObj.icon_data.character_id || "",
+                            messageObj.icon_data.character_name,
+                            messageObj.message || "",
+                            "シ"
+                        );
+                    } else {
+                        insertElement = insertChatMessage(
+                            insertElement,
+                            messageObj.line_id || "",
+                            messageObj.icon_data.character_id || "",
+                            messageObj.icon_data.character_name,
+                            messageObj.message || "",
+                            "シ"
+                        );
+                    }
+                }
+
+                rowElementMessage.remove();
+            }
+        } catch (error) {
+            console.error(error);
+
+            showToast(
+                error.message || "エラー発生",
+                MESSAGE_TYPE.ERROR
+            );
+        } finally {
+            if (chatButton) {
+                chatButton.disabled = false;
+                chatButton.textContent = "発言";
+            }
+        }
+
+        return;
+    }
+
+    showStandeeImage(
+        "characters/standing/shirai_yui/shirai_yui_standing.png",
+        "白井 結"
+    );
+}
+
+async function selectSession(event) {
+
+    const row = event.target.closest(".session-row");
+    if (!row) return;
+
+    const sessionId = row.dataset.sessionId;
+
+    const worldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+    
+    // チェック
+    if (!checkWorldId(worldId)) {
+        return;
+    }
+
+    try {
+
+        // 新規チャット（初期処理）
+        const responseSession = await fetch(getFlaskBaseUrl() + API_PATHS.SELECTED_SESSION, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                session_id: sessionId
+            }),
+        });
+
+        const resultSession = await responseSession.json();
+
+        if (responseSession.ok && resultSession.status === "ok") {
+            console.log("返却内容", resultSession);
+
+            clearChatLog();
+            const messageList = resultSession.message_list;
+            for (const messageObj of messageList) {
+                console.log("要素", messageObj);
+                if (messageObj.icon_data.character_id === "player") {
+                    appendChatMessageByUser(
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || ""
+                    );
+                } else if (messageObj.icon_data.character_id === "system") {
+                    appendChatMessageBySystem(
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || ""
+                    );
+                } else {
+                    appendChatMessage(
+                        messageObj.line_id || "",
+                        messageObj.icon_data.character_id || "",
+                        messageObj.icon_data.character_name,
+                        messageObj.message || ""
+                    );
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+    } finally {
+        if (chatButton) {
+            chatButton.disabled = false;
+            chatButton.textContent = "発言";
+        }
+    }
+}
 
 function closeAllOverlays() {
     worldOverlay.classList.add('hidden');
@@ -59,53 +353,6 @@ function setTopCollapsed(collapsed) {
     toggleTop.textContent = collapsed ? 'ロック' : '解除';
 }
 
-toggleTop.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
-topbar.addEventListener('mouseenter', () => { if (topbar.classList.contains('collapsed')) topbar.classList.add('menu-open'); });
-topbar.addEventListener('mouseleave', () => topbar.classList.remove('menu-open'));
-toggleTopFromFloat.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
-layoutToggleTop.addEventListener('click', () => floatingMenu.classList.toggle('hidden'));
-closeFloat.addEventListener('click', () => floatingMenu.classList.add('hidden'));
-
-worldToggleButton.addEventListener('click', () => {
-    reloadWorldFrame();
-    setOverlay(worldOverlay.classList.contains('hidden'), worldOverlay, 'world-open');
-});
-closeWorldOverlay.addEventListener('click', () => setOverlay(false, worldOverlay, 'world-open'));
-openWorldWindow.addEventListener('click', () => window.open('world.html', 'worldCard'));
-
-characterToggleButton.addEventListener('click', () => { reloadCharacterFrame(); setOverlay(characterOverlay.classList.contains('hidden'), characterOverlay, 'character-open'); });
-closeCharacterOverlay.addEventListener('click', () => setOverlay(false, characterOverlay, 'character-open'));
-openCharacterWindow.addEventListener('click', () => window.open('character.html', 'characterCard'));
-
-settingsToggleButton.addEventListener('click', () => setOverlay(settingsOverlay.classList.contains('hidden'), settingsOverlay, 'settings-open'));
-closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsOverlay, 'settings-open'));
-openSettingsWindow.addEventListener('click', () => window.open('settings.html', 'settingsWindow'));
-
-playerToggleButton.addEventListener('click', () => setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'));
-closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
-openPlayerWindow.addEventListener('click', () => window.open('player.html', 'playerWindow'));
-
-tagManageButton.addEventListener('click', () => setOverlay(tagManagerWindow.classList.contains('hidden'), tagManagerWindow, 'tag-manager-open'));
-closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
-closeTagManagerFooter.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
-
-window.addEventListener('message', (event) => {
-    if (!event.data || event.data.type !== 'settings_applied') return;
-    const title = document.getElementById('settingsTitle');
-    if (!title) return;
-    const original = title.textContent;
-    title.textContent = event.data.message;
-    title.style.color = '#0f7a2f';
-    setTimeout(() => { title.textContent = original; title.style.color = ''; }, 2000);
-});
-
-const worldSelectButton = document.getElementById("worldSelectButton");
-const worldSelectPopup = document.getElementById("worldSelectPopup");
-const closeWorldSelectPopup = document.getElementById("closeWorldSelectPopup");
-const worldSelectTableBody = document.getElementById("worldSelectTableBody");
-const sessionList = document.getElementById("sessionList");
-const newChatButton = document.getElementById("newChatButton");
-
 function getWorldList() {
     try {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORLD_LIST) || "[]");
@@ -116,9 +363,9 @@ function getWorldList() {
 
 function getSessionList() {
     try {
-    return JSON.parse(localStorage.getItem("session_list") || "[]");
+        return JSON.parse(localStorage.getItem("session_list") || "[]");
     } catch {
-    return [];
+        return [];
     }
 }
 
@@ -161,7 +408,7 @@ function applySelectedSession(session) {
     "";
 
     if (sessionId) {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, sessionId);
+        localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, sessionId);
     }
 
     localStorage.setItem("selected_session_name", sessionName);
@@ -183,17 +430,274 @@ function buildSessionFromNewChatResult(result, fallbackWorldId, fallbackWorldNam
     "名称未設定";
 
     return {
-    session_id: sessionId,
-    world_id: worldId,
-    world_name: worldName,
-    display_name: displayName,
-    updated_at: result.updated_at || ""
+        session_id: sessionId,
+        world_id: worldId,
+        world_name: worldName,
+        display_name: displayName,
+        updated_at: result.updated_at || ""
     };
 }
 
 function clearSessionList() {
     if (!sessionList) return;
+
     sessionList.innerHTML = "";
+
+    if (selectAllSessionsCheckbox) {
+        selectAllSessionsCheckbox.checked = false;
+        selectAllSessionsCheckbox.indeterminate = false;
+    }
+
+    updateSelectedSessionDeleteButton();
+}
+
+/**
+ * セッション更新日時を一覧表示用に分割する。
+ *
+ * 対応例:
+ * 2026年07月11日 23:26
+ * 2026年7月11日 23:26
+ * 2026-07-11 23:26
+ *
+ * @param {string} updatedAt 更新日時
+ * @returns {{ year: string, date: string }}
+ */
+function formatSessionUpdatedAt(updatedAt) {
+    const value = String(updatedAt || "").trim();
+
+    if (!value) {
+        return {
+            year: "",
+            date: "",
+        };
+    }
+
+    const japaneseMatch = value.match(
+        /^(\d{4})年0?(\d{1,2})月0?(\d{1,2})日(?:\s+(.+))?$/
+    );
+
+    if (japaneseMatch) {
+        const year = japaneseMatch[1];
+        const month = Number(japaneseMatch[2]);
+        const day = Number(japaneseMatch[3]);
+        const time = japaneseMatch[4] || "";
+
+        return {
+            year: `${year}年`,
+            date:
+                `${month}月${day}日` +
+                (time ? ` ${time}` : ""),
+        };
+    }
+
+    const standardMatch = value.match(
+        /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s]+(.+))?$/
+    );
+
+    if (standardMatch) {
+        const year = standardMatch[1];
+        const month = Number(standardMatch[2]);
+        const day = Number(standardMatch[3]);
+
+        let time = standardMatch[4] || "";
+
+        /*
+         * ISO形式で秒やタイムゾーンが含まれていても、
+         * 一覧上では時分までにする。
+         */
+        const timeMatch = time.match(/^(\d{1,2}):(\d{2})/);
+
+        if (timeMatch) {
+            time = `${timeMatch[1]}:${timeMatch[2]}`;
+        }
+
+        return {
+            year: `${year}年`,
+            date:
+                `${month}月${day}日` +
+                (time ? ` ${time}` : ""),
+        };
+    }
+
+    /*
+     * 想定外の形式の場合は、値を壊さず2段目に表示する。
+     */
+    return {
+        year: "",
+        date: value,
+    };
+}
+
+/**
+ * 選択されているセッションIDを取得する。
+ *
+ * @returns {string[]}
+ */
+function getSelectedSessionIds() {
+    if (!sessionList) {
+        return [];
+    }
+
+    return Array.from(
+        sessionList.querySelectorAll(
+            ".session-select-checkbox:checked"
+        )
+    )
+    .map(checkbox => checkbox.value)
+    .filter(sessionId => sessionId);
+}
+
+/**
+ * 選択削除ボタンと全選択チェックの状態を更新する。
+ */
+function updateSelectedSessionDeleteButton() {
+    if (!sessionList) {
+        return;
+    }
+
+    const checkboxes = Array.from(
+        sessionList.querySelectorAll(
+            ".session-select-checkbox"
+        )
+    );
+
+    const selectedCheckboxes = checkboxes.filter(
+        checkbox => checkbox.checked
+    );
+
+    const selectedCount = selectedCheckboxes.length;
+
+    if (deleteSelectedSessionsButton) {
+        deleteSelectedSessionsButton.disabled =
+            selectedCount === 0;
+
+        deleteSelectedSessionsButton.textContent =
+            selectedCount > 0
+                ? `選択削除（${selectedCount}）`
+                : "選択削除";
+    }
+
+    if (selectAllSessionsCheckbox) {
+        selectAllSessionsCheckbox.checked =
+            checkboxes.length > 0 &&
+            selectedCount === checkboxes.length;
+
+        selectAllSessionsCheckbox.indeterminate =
+            selectedCount > 0 &&
+            selectedCount < checkboxes.length;
+
+        selectAllSessionsCheckbox.disabled =
+            checkboxes.length === 0;
+    }
+}
+
+/**
+ * ヘッダーのチェック状態を全行へ反映する。
+ *
+ * @param {Event} event changeイベント
+ */
+function changeAllSessionSelections(event) {
+    const checked = event.target.checked;
+
+    const checkboxes = sessionList.querySelectorAll(
+        ".session-select-checkbox"
+    );
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = checked;
+    });
+
+    updateSelectedSessionDeleteButton();
+}
+
+/**
+ * 選択されたセッションを削除する。
+ */
+async function deleteSelectedSessions() {
+    const selectedSessionIds =
+        getSelectedSessionIds();
+
+    if (selectedSessionIds.length === 0) {
+        return;
+    }
+
+    const confirmMessage =
+        `${selectedSessionIds.length}件のセッションを削除しますか？`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    deleteSelectedSessionsButton.disabled = true;
+    deleteSelectedSessionsButton.textContent = "削除中";
+
+    const deletedSessionIds = [];
+    const failedSessionIds = [];
+
+    const result = await deleteSession(selectedSessionIds);
+    
+    console.log("削除実施後");
+    if (result.status === "ok") {
+        console.log("分岐通過後");
+        // セッションリスト全体から選択中のセッションを外したもの
+        // ここでは予定
+        const sessions = getSessionList().filter(session => {
+            return !result.deleted_session_ids.includes(
+                session.session_id
+            );
+        });
+
+        saveSessionList(sessions);
+
+        const selectedSessionId =
+            localStorage.getItem(
+                STORAGE_KEYS.SELECTED_SESSION_ID
+            ) || "";
+
+        /*
+        * 現在開いているセッションが削除対象だった場合は、
+        * 選択状態とチャット表示を解除する。
+        */
+        if (result.deleted_session_ids.includes(selectedSessionId)) {
+            localStorage.removeItem(
+                STORAGE_KEYS.SELECTED_SESSION_ID
+            );
+
+            localStorage.removeItem(
+                "selected_session_name"
+            );
+
+            resetMainView();
+            updateSummaryWorld();
+        }
+
+        renderSessionList(
+            sessions,
+            localStorage.getItem(
+                STORAGE_KEYS.SELECTED_SESSION_ID
+            ) || ""
+        );
+
+        if (failedSessionIds.length > 0) {
+            showToast(
+                `${result.deleted_session_ids.length}件削除しました。` +
+                `${result.failed_session_ids.length}件は削除できませんでした。`,
+                MESSAGE_TYPE.ERROR
+            );
+
+            return;
+        }
+
+        showToast(
+            `${result.deleted_session_ids.length}件のセッションを削除しました。`,
+            MESSAGE_TYPE.SUCCESS
+        );
+    } else {
+        showToast(
+            "サーバー処理通信エラー",
+            MESSAGE_TYPE.ERROR
+        );
+    }
 }
 
 function normalizeSessionList(rawSessions) {
@@ -228,136 +732,190 @@ function normalizeSessionList(rawSessions) {
     .filter(session => session.session_id);
 }
 
-function renderSessionList(sessions, selectedSessionId) {
+function renderSessionList(
+    sessions,
+    selectedSessionId
+) {
     clearSessionList();
 
-    if (!Array.isArray(sessions) || sessions.length === 0) {
-    return;
+    if (
+        !Array.isArray(sessions) ||
+        sessions.length === 0
+    ) {
+        updateSelectedSessionDeleteButton();
+        return;
     }
 
     sessions.forEach(session => {
-    const row = document.createElement("div");
-    row.className = "session-row";
-    row.dataset.sessionId = session.session_id || "";
+        const row =
+            document.createElement("div");
 
-    if (selectedSessionId && session.session_id === selectedSessionId) {
-        row.classList.add("active");
-    }
+        row.className = "session-row";
+        row.dataset.sessionId =
+            session.session_id || "";
 
-    const iconText = session.world_name ? session.world_name.slice(0, 1) : "世";
-    const displayName = session.display_name || "名称未設定";
-    const updatedAt = session.updated_at || "";
-
-    row.innerHTML = `
-        <div class="session-name">
-        <span class="session-icon">${iconText}</span>
-        <span>${displayName}</span>
-        </div>
-
-        <span>${updatedAt}</span>
-
-        <div style="display:flex; gap:4px;">
-        <button
-            class="session-detail"
-            type="button"
-            title="session_id: ${session.session_id || ""}\nクリックでコピー"
-        >
-            i
-        </button>
-
-        <button
-            class="session-delete"
-            type="button"
-            title="削除"
-        >
-            ×
-        </button>
-        </div>
-    `;
-
-    row.addEventListener("click", () => {
-        document.querySelectorAll(".session-row.active").forEach(activeRow => {
-        activeRow.classList.remove("active");
-        });
-        row.classList.add("active");
-
-        // セッション選択では、現使用セッションだけ更新する。
-        // 世界ID/世界名は世界選択時の値を維持する。
-        localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, session.session_id || "");
-        localStorage.setItem("selected_session_name", displayName);
-
-        updateSummaryWorld();
-    });
-
-    const deleteButton = row.querySelector(".session-delete");
-    const detailButton = row.querySelector(".session-detail");
-
-    if (detailButton) {
-        detailButton.addEventListener("click", async event => {
-        event.stopPropagation();
-
-        const sessionId = session.session_id || "";
-
-        if (!sessionId) {
-            return;
+        if (
+            selectedSessionId &&
+            session.session_id === selectedSessionId
+        ) {
+            row.classList.add("active");
         }
 
-        try {
-            await navigator.clipboard.writeText(sessionId);
+        const iconText =
+            session.world_name
+                ? session.world_name.slice(0, 1)
+                : "世";
 
-            detailButton.textContent = "✓";
+        const displayName =
+            session.display_name ||
+            "名称未設定";
 
-            setTimeout(() => {
-            detailButton.textContent = "i";
-            }, 1000);
+        const updatedAt =
+            formatSessionUpdatedAt(
+                session.updated_at || ""
+            );
 
-        } catch (error) {
-            console.error(error);
-            showToast(error || "コピーに失敗しました", MESSAGE_TYPE.ERROR);
-        }
-        });
-    }
-    if (deleteButton) {
-        deleteButton.addEventListener("click", async event => {
-        event.stopPropagation();
+        row.innerHTML = `
+            <label
+                class="session-select-cell"
+                title="削除対象として選択"
+            >
+                <input
+                    class="session-select-checkbox"
+                    type="checkbox"
+                    value="${session.session_id || ""}"
+                />
+            </label>
 
-        const sessionId = session.session_id || "";
-        if (!sessionId) return;
+            <div class="session-name">
+                <span class="session-icon">
+                    ${iconText}
+                </span>
 
-        if (!confirm(`${displayName} を削除しますか？`)) {
-            return;
-        }
+                <span
+                    class="session-display-name"
+                    title="${displayName}"
+                >
+                    ${displayName}
+                </span>
+            </div>
 
-        try {
-            await deleteSession(sessionId);
+            <div class="session-updated-at">
+                <span class="session-updated-year">
+                    ${updatedAt.year}
+                </span>
 
-            const sessions = getSessionList().filter(item => {
-            return item.session_id !== sessionId;
-            });
+                <span class="session-updated-date">
+                    ${updatedAt.date}
+                </span>
+            </div>
 
-            saveSessionList(sessions);
+            <button
+                class="session-detail"
+                type="button"
+                title="session_id: ${session.session_id || ""}\nクリックでコピー"
+            >
+                i
+            </button>
+        `;
 
-            const selectedSessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+        /*
+         * 行のクリックでは、現在使用するセッションを選択する。
+         */
+        row.addEventListener("click", () => {
+            document
+                .querySelectorAll(".session-row.active")
+                .forEach(activeRow => {
+                    activeRow.classList.remove("active");
+                });
 
-            if (selectedSessionId === sessionId) {
-            localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_ID);
-            localStorage.removeItem("selected_session_name");
-            resetMainView();
+            row.classList.add("active");
+
+            localStorage.setItem(
+                STORAGE_KEYS.SELECTED_SESSION_ID,
+                session.session_id || ""
+            );
+
+            localStorage.setItem(
+                "selected_session_name",
+                displayName
+            );
+
             updateSummaryWorld();
-            }
-
-            renderSessionList(sessions, localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "");
-
-        } catch (error) {
-            console.error(error);
-            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
-        }
         });
-    }
 
-    sessionList.appendChild(row);
+        const selectCheckbox =
+            row.querySelector(
+                ".session-select-checkbox"
+            );
 
+        const detailButton =
+            row.querySelector(".session-detail");
+
+        /*
+         * チェックボックス操作時に、
+         * セッション選択の行クリックを発生させない。
+         */
+        if (selectCheckbox) {
+            selectCheckbox.addEventListener(
+                "click",
+                event => {
+                    event.stopPropagation();
+                }
+            );
+
+            selectCheckbox.addEventListener(
+                "change",
+                () => {
+                    updateSelectedSessionDeleteButton();
+                }
+            );
+        }
+
+        /*
+         * session_idのコピー。
+         */
+        if (detailButton) {
+            detailButton.addEventListener(
+                "click",
+                async event => {
+                    event.stopPropagation();
+
+                    const sessionId =
+                        session.session_id || "";
+
+                    if (!sessionId) {
+                        return;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(
+                            sessionId
+                        );
+
+                        detailButton.textContent = "✓";
+
+                        setTimeout(() => {
+                            detailButton.textContent = "i";
+                        }, 1000);
+
+                    } catch (error) {
+                        console.error(error);
+
+                        showToast(
+                            error.message ||
+                            "コピーに失敗しました",
+                            MESSAGE_TYPE.ERROR
+                        );
+                    }
+                }
+            );
+        }
+
+        sessionList.appendChild(row);
     });
+
+    updateSelectedSessionDeleteButton();
 }
 
 async function postWorldStart(world) {
@@ -383,13 +941,13 @@ async function postWorldStart(world) {
 async function startNewChatBySessionId(sessionId) {
 
     const response = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-        session_id: sessionId,
-    }),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+        }),
     });
 
     const result = await response.json();
@@ -426,82 +984,134 @@ async function startSessionByWorld(world) {
     return result;
 }
 
-async function postNewChat() {
-    const basePath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH)
-    const worldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
-    const worldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
-    
-    if (!worldId) {
+function checkWorldId(world) {
+    if (!world) {
         showToast("先に世界を選択してください", MESSAGE_TYPE.INFO);
+        return false;
+    }
+    return true;
+}
+
+function checkSessionId(session) {
+    if (!session) {
+        showToast("セッションIDが取得できませんでした。<br/>セッションリストから選択してください", MESSAGE_TYPE.INFO);
+        return false;
+    }
+    return true;
+}
+
+function changeButtonName(button) {
+    if (button) {
+        button.disabled = true;
+        button.textContent = "作成中";
+    }
+}
+
+async function startUp(worldId) {
+    const basePath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH);
+    const worldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
+    try {
+        const response = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT_STARTUP, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                base_path: basePath,
+                world_id: worldId,
+            }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "ok") {
+            throw new Error(result.message || "新規セッション作成に失敗しました");
+        }
+
+        const session = buildSessionFromNewChatResult(result, worldId, worldName);
+
+        if (!session.session_id) {
+            throw new Error("session_id が返ってきませんでした");
+        }
+
+        applySelectedSession(session);
+
+        const sessions = Array.isArray(result.sessions)
+            ? normalizeSessionList(result.sessions)
+            : upsertSessionList(session);
+
+        if (Array.isArray(result.sessions)) {
+            saveSessionList(sessions);
+        }
+
+        renderSessionList(sessions, session.session_id);
+        resetMainView();
+        applySelectedSession(session);
+
+        return session;
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+    } finally {
+        if (newChatButton) {
+            newChatButton.disabled = false;
+            newChatButton.textContent = "新規チャット";
+        }
+    }
+}
+
+async function postNewChat() {
+    const worldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+
+    console.log(
+        "[新規チャット押下] 世界ID:",
+        worldId,
+        "キー名:",
+        STORAGE_KEYS.SELECTED_WORLD_ID
+    );
+
+    console.log(
+        "[新規チャット押下] LocalStorage全体:",
+        { ...localStorage }
+    );
+
+    // チェック
+    if (!checkWorldId(worldId)) {
         return;
     }
-
-    if (newChatButton) {
-    newChatButton.disabled = true;
-    newChatButton.textContent = "作成中";
-    }
+    // ボタン名変更
+    changeButtonName(newChatButton);
 
     try {
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT_STARTUP, {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-        base_path: basePath,
-        world_id: worldId,
-        }),
-    });
 
-    const result = await response.json();
+        // 初期処理前準備
+        const session = await startUp(worldId);
 
-    if (!response.ok || result.status !== "ok") {
-        throw new Error(result.message || "新規セッション作成に失敗しました");
-    }
+        // 新規チャット（初期処理）
+        const responseNewChat = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                session_id: session.session_id
+            }),
+        });
 
-    const session = buildSessionFromNewChatResult(result, worldId, worldName);
+        const resultNewChat = await responseNewChat.json();
 
-    if (!session.session_id) {
-        throw new Error("session_id が返ってきませんでした");
-    }
+        if (responseNewChat.ok && resultNewChat.status === "ok") {
+            console.log("返却内容", resultNewChat);
 
-    applySelectedSession(session);
+            clearChatLog();
 
-    const sessions = Array.isArray(result.sessions)
-        ? normalizeSessionList(result.sessions)
-        : upsertSessionList(session);
-
-    if (Array.isArray(result.sessions)) {
-        saveSessionList(sessions);
-    }
-
-    renderSessionList(sessions, session.session_id);
-    resetMainView();
-    applySelectedSession(session);
-
-    const responseNewChat = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-        session_id: session.session_id
-        }),
-    });
-
-    const resultNewChat = await responseNewChat.json();
-
-    if (responseNewChat.ok && resultNewChat.status === "ok") {
-        console.log("返却内容", resultNewChat);
-
-        resetMainView();
-
-        appendChatMessage(
-        "シナリオ開始",
-        resultNewChat.start_message || "",
-        "始"
-        );
-    }
+            appendChatMessage(
+                resultNewChat.line_id || "",
+                resultNewChat.icon_data.character_id,
+                resultNewChat.icon_data.character_name,
+                resultNewChat.message || ""
+            );
+        }
 
     } catch (error) {
         console.error(error);
@@ -510,6 +1120,136 @@ async function postNewChat() {
         if (newChatButton) {
             newChatButton.disabled = false;
             newChatButton.textContent = "新規チャット";
+        }
+    }
+}
+
+async function postChat() {
+    const sessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+    // チェック
+    if (!checkSessionId(sessionId)) {
+        return;
+    }
+
+    inputElement = document.querySelector(".chat-input")
+    message = inputElement.value;
+    // TODO 未入力の場合警告
+    if (message !== "") {
+        // ボタン名変更
+        changeButtonName(chatButton);
+
+        // playerの発言を先に反映
+        appendChatMessageByUser(
+            "100" || "",
+            "user",
+            "ユーザ",
+            message
+        );
+
+        try {
+
+            inputElement.value = ""
+
+            // 新規チャット（初期処理）
+            const responseChat = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: message
+                }),
+            });
+
+            const resultChat = await responseChat.json();
+
+            if (responseChat.ok && resultChat.status === "ok") {
+                console.log("返却内容", resultChat);
+
+                appendChatMessage(
+                    resultChat.line_id || "",
+                    resultChat.icon_data.character_id,
+                    resultChat.icon_data.character_name,
+                    resultChat.message || "",
+                );
+            }
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+        } finally {
+            if (chatButton) {
+                chatButton.disabled = false;
+                chatButton.textContent = "発言";
+            }
+        }
+    } else {
+
+    }
+
+}
+
+async function postReChat() {
+    const sessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+    // チェック
+    if (!checkSessionId(sessionId)) {
+        return;
+    }
+
+    const inputElements = document.querySelectorAll(".bubble_user");
+
+    //TODO ユーザ主導のメッセージが無い時は警告出す
+    if (inputElements.length > 0) {
+        // ボタン名変更
+        changeButtonName(reChatButton);
+
+        const inputElement = inputElements[inputElements.length - 1];
+        const message = inputElement.querySelector(".message-text").innerText
+        
+        // playerの発言を先に反映
+        appendChatMessageByUser(
+            "100" || "",
+            "user",
+            "ユーザ",
+            message,
+        );
+
+        try {
+
+            // 新規チャット（初期処理）
+            const responseReChat = await fetch(getFlaskBaseUrl() + API_PATHS.RE_CHAT, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: message
+                }),
+            });
+
+            const resultReChat = await responseReChat.json();
+
+            if (responseReChat.ok && resultReChat.status === "ok") {
+                console.log("返却内容", responseReChat);
+
+                appendChatMessage(
+                    resultReChat.line_id || "",
+                    resultReChat.icon_data.character_id,
+                    resultReChat.icon_data.character_name,
+                    resultReChat.message || "",
+                );
+            }
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+        } finally {
+            if (reChatButton) {
+                reChatButton.disabled = false;
+                reChatButton.textContent = "再送";
+            }
         }
     }
 }
@@ -542,92 +1282,227 @@ function openWorldSelectPopup() {
     worldSelectPopup.classList.remove("hidden");
 }
 
-worldSelectButton.addEventListener("click", openWorldSelectPopup);
-
-if (newChatButton) {
-    newChatButton.addEventListener("click", postNewChat);
+function closeWorldSelect() {
+    worldSelectPopup.classList.add("hidden");
 }
 
-closeWorldSelectPopup.addEventListener("click", () => {
-    worldSelectPopup.classList.add("hidden");
-});
 function resetMainView() {
     const chatLog = document.querySelector(".chat-log");
-    const standeeBox = document.querySelector(".standee-box");
     const worldList = document.querySelector(".world-list");
-    const parameterStrip = document.querySelector(".parameter-strip");
+    const parameterStrip =
+        document.querySelector(".parameter-strip");
     const chatInput = document.querySelector(".chat-input");
-    const scenario = document.querySelector("#summaryScenario");
-    const server = document.querySelector("#summaryServer");
-    const serverStatus = document.querySelector("#summaryServerStatus");
-    const character = document.querySelector("#summaryCharacter");
-    const llm = document.querySelector("#summaryLlm");
-    const summaryImage = document.querySelector("#summaryImage");
-    const summaryImageStatus = document.querySelector("#summaryImageStatus");
 
-    if (chatLog) chatLog.innerHTML = "";
-    if (standeeBox) standeeBox.innerHTML = "発言キャラクター立ち絵";
-    if (worldList) {
-    worldList.innerHTML = `
-        <div class="image-stage">
-        <div class="image-box">
-            返信画像<br>
-            ここに小さめプレビューや生成状態を置いても良さそうです。
-        </div>
-        </div>
-    `;
+    const scenario =
+        document.querySelector("#summaryScenario");
+    const server =
+        document.querySelector("#summaryServer");
+    const serverStatus =
+        document.querySelector("#summaryServerStatus");
+    const llm =
+        document.querySelector("#summaryLlm");
+    const summaryImage =
+        document.querySelector("#summaryImage");
+    const summaryImageStatus =
+        document.querySelector("#summaryImageStatus");
+
+    if (chatLog) {
+        chatLog.innerHTML = "";
     }
-    if (parameterStrip) parameterStrip.innerHTML = "キャラパラメータ枠<br />喋ったキャラと連動 / 世界カードON/OFF指定";
-    if (chatInput) chatInput.value = "";
-    if (scenario) scenario.innerHTML  = "選択中世界: ";
-    if (server) server.innerHTML  = "サーバー： ";
-    if (serverStatus) serverStatus.innerHTML  = "－確認待ち";
-    if (llm) llm.innerHTML  = "使用モデル: Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf";
-    if (summaryImage) summaryImage.innerHTML  = "画像作成中: ";
-    if (summaryImageStatus) summaryImageStatus.innerHTML  = "－確認待ち";
+
+    resetStandee();
+
+    if (worldList) {
+        worldList.innerHTML = `
+            <div class="image-stage">
+                <div class="image-box">
+                    返信画像<br>
+                    ここに小さめプレビューや生成状態を置いても良さそうです。
+                </div>
+            </div>
+        `;
+    }
+
+    if (parameterStrip) {
+        parameterStrip.innerHTML =
+            "キャラパラメータ枠<br />" +
+            "喋ったキャラと連動 / 世界カードON/OFF指定";
+    }
+
+    if (chatInput) {
+        chatInput.value = "";
+    }
+
+    if (scenario) {
+        scenario.innerHTML = "選択中世界: ";
+    }
+
+    if (server) {
+        server.innerHTML = "サーバー： ";
+    }
+
+    if (serverStatus) {
+        serverStatus.innerHTML = "－確認待ち";
+    }
+
+    if (llm) {
+        llm.innerHTML =
+            "使用モデル: Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf";
+    }
+
+    if (summaryImage) {
+        summaryImage.innerHTML = "画像作成中: ";
+    }
+
+    if (summaryImageStatus) {
+        summaryImageStatus.innerHTML = "－確認待ち";
+    }
 }
 
-function appendChatMessage(name, text, avatarText = "") {
-    const chatLog = document.querySelector(".chat-log");
-    if (!chatLog) return;
+function clearChatLog() {
+    const chatLog =
+        document.querySelector(".chat-log");
+    const parameterStrip =
+        document.querySelector(".parameter-strip");
+    const chatInput =
+        document.querySelector(".chat-input");
+
+    if (chatLog) {
+        chatLog.innerHTML = "";
+    }
+
+    resetStandee();
+
+    if (parameterStrip) {
+        parameterStrip.innerHTML =
+            "キャラパラメータ枠<br />" +
+            "喋ったキャラと連動 / 世界カードON/OFF指定";
+    }
+
+    if (chatInput) {
+        chatInput.value = "";
+    }
+}
+
+function createChatMessage(chatObject, rowData, lineId, id, name, text, classId) {
+    console.log(rowData);
 
     const message = document.createElement("div");
     message.className = "message";
+    message.dataset.lineId = id;
 
-    message.innerHTML = `
-    <div class="avatar"></div>
-    <div class="bubble">
-        <div class="name"></div>
-        <div class="message-text"></div>
-    </div>
-    `;
+    message.innerHTML = chatObject;
 
-    message.querySelector(".avatar").textContent = avatarText || name.slice(0, 1);
+    const avatar = message.querySelector(".avatar");
+    const bubble = message.querySelector(classId);
+    const img = message.querySelector(".avatar-img");
+    const avatarTextElement = message.querySelector(".avatar-text");
+
+    img.src = `characters/icon/${id}/${id}.png`;   // 例
+    img.alt = name;
+    
+    img.onload = () => {
+        avatar.style.border = "none";
+        avatar.style.background = "transparent";
+    };
+
+    // 画像が無い場合は頭文字を表示
+    img.onerror = () => {
+        img.style.display = "none";
+        avatarTextElement.style.display = "flex";
+        avatarTextElement.style.display = "flex";
+        avatarTextElement.textContent =
+            (name || "？").substring(0, 1);
+    };
+
+    bubble.dataset.lineId = lineId;
+    bubble.dataset.characterId = id;
     message.querySelector(".name").textContent = name;
     message.querySelector(".message-text").textContent = text || "";
+    
+    return message;
+}
+function insertChatMessage(rowData, lineId, id, name, text) {
+
+    const classId = ".bubble";
+    const message = createChatMessage(BASE_CHAT_OBJECT, rowData, lineId, id, name, text, classId);
+    rowData.insertAdjacentElement("afterend", message)
+    rowData.scrollTop = rowData.scrollHeight;
+
+    return message
+}
+function insertChatMessageBySystem(rowData, lineId, id, name, text) {
+
+    const classId = ".bubble"
+    const message = createChatMessage(BASE_CHAT_OBJECT, rowData, lineId, id, name, text, classId);
+    rowData.insertAdjacentElement("afterend", message)
+    rowData.scrollTop = rowData.scrollHeight;
+    return message
+}
+function insertChatMessageByUser(rowData, lineId, id, name, text) {
+    const classId = ".bubble_user";
+    const message = createChatMessage(BASE_CHAT_OBJECT_USER, rowData, lineId, id, name, text, classId);
+    rowData.insertAdjacentElement("afterend", message)
+    rowData.scrollTop = rowData.scrollHeight;
+    return message
+}
+
+function appendChatMessage(lineId, id, name, text) {
+    const chatLog = document.querySelector(".chat-log");
+    if (!chatLog) return;
+
+    const classId = ".bubble";
+    const message = createChatMessage(BASE_CHAT_OBJECT, chatLog, lineId, id, name, text, classId);
 
     chatLog.appendChild(message);
     chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-async function deleteSession(sessionId) {
+function appendChatMessageBySystem(lineId, id, name, text) {
+    const chatLog = document.querySelector(".chat-log");
+    if (!chatLog) return;
 
-    if (!sessionId) return;
+    const classId = ".bubble";
+    const message = createChatMessage(BASE_CHAT_OBJECT, chatLog, lineId, id, name, text, classId);
 
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.DELETE_SESSION, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-        session_id: sessionId,
-    }),
-    });
+    chatLog.appendChild(message);
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function appendChatMessageByUser(lineId, id, name, text) {
+    const chatLog = document.querySelector(".chat-log");
+    if (!chatLog) return;
+
+    const classId = ".bubble_user";
+    const message = createChatMessage(BASE_CHAT_OBJECT_USER, chatLog, lineId, id, name, text, classId);
+
+    chatLog.appendChild(message);
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+async function deleteSession(sessionIds) {
+
+    const response = await fetch(
+        getFlaskBaseUrl() + API_PATHS.DELETE_SESSION,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                session_ids: sessionIds,
+            }),
+        }
+    );
 
     const result = await response.json();
 
-    if (!response.ok || result.status !== "ok") {
-    throw new Error(result.message || "セッション削除に失敗しました");
+    console.log("削除結果", result);
+    if (!response.ok ||result.status !== "ok") {
+        throw new Error(
+            result.message ||
+            "セッション削除に失敗しました"
+        );
     }
 
     return result;
@@ -636,8 +1511,18 @@ async function deleteSession(sessionId) {
 async function initializeMainViewFromLocalStorage() {
     resetMainView();
 
-    const selectedWorldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
-    const selectedWorldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
+    const selectedWorldId =
+        localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+
+    const selectedWorldName =
+        localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
+
+    console.log(
+        "[初期表示] 世界ID:",
+        selectedWorldId,
+        "キー名:",
+        STORAGE_KEYS.SELECTED_WORLD_ID
+    );
 
     console.log("select", selectedWorldId);
     updateSummaryWorld();
@@ -646,8 +1531,8 @@ async function initializeMainViewFromLocalStorage() {
 
     // 世界選択をしていない場合は、サーバーへ問い合わせない。
     if (!selectedWorldId) {
-    saveSessionList([]);
-    return;
+        saveSessionList([]);
+        return;
     }
 
     try {
@@ -683,16 +1568,11 @@ async function initializeMainViewFromLocalStorage() {
     renderSessionList(sessions, "");
 
     } catch (error) {
-    console.error(error);
-    saveSessionList([]);
-    clearSessionList();
+        console.error(error);
+        saveSessionList([]);
+        clearSessionList();
     }
 }
-
-initializeMainViewFromLocalStorage();
-
-const summaryCheck = document.getElementById("summaryCheck");
-const summaryServerStatus = document.getElementById("summaryServerStatus");
 
 async function checkServerHealth() {
 
@@ -700,21 +1580,21 @@ async function checkServerHealth() {
     summaryServerStatus.className = "status-wait";
 
     try {
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.HEALTH);
+        const response = await fetch(getFlaskBaseUrl() + API_PATHS.HEALTH);
 
-    if (!response.ok) {
-        throw new Error("health request failed");
-    }
+        if (!response.ok) {
+            throw new Error("health request failed");
+        }
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (result.status === "ok") {
-        summaryServerStatus.textContent = "●接続中";
-        summaryServerStatus.className = "status-ok";
-    } else {
-        summaryServerStatus.textContent = "×未接続";
-        summaryServerStatus.className = "status-error";
-    }
+        if (result.status === "ok") {
+            summaryServerStatus.textContent = "●接続中";
+            summaryServerStatus.className = "status-ok";
+        } else {
+            summaryServerStatus.textContent = "×未接続";
+            summaryServerStatus.className = "status-error";
+        }
 
     } catch (error) {
     console.error(error);
@@ -724,4 +1604,44 @@ async function checkServerHealth() {
     }
 }
 
-summaryCheck.addEventListener("click", checkServerHealth);
+const chatInput = document.querySelector(".chat-input");
+const log = document.querySelector(".chat-log");
+
+chatInput.addEventListener("keydown", (event) => {
+
+    switch (event.key) {
+        case "PageUp":
+            event.preventDefault();
+            log.scrollBy({ top: -log.clientHeight, behavior: "smooth" });
+            break;
+
+        case "PageDown":
+            event.preventDefault();
+            log.scrollBy({ top: log.clientHeight, behavior: "smooth" });
+            break;
+
+        case "Home":
+            event.preventDefault();
+            log.scrollTo({ top: 0, behavior: "smooth" });
+            break;
+
+        case "End":
+            event.preventDefault();
+            log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+            break;
+
+        case "Enter":
+            // Shift または Ctrl が押されていたら改行
+            if (event.shiftKey || event.ctrlKey) {
+                return;
+            }
+            // Enterのみ送信
+            event.preventDefault();
+            document.getElementById("chatButton").click();
+    }
+});
+
+// 初期処理
+initializeMainViewFromLocalStorage();
+// サーバー確認
+checkServerHealth();

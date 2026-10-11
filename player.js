@@ -74,13 +74,6 @@ function renderPlayerList() {
     }
 }
 
-function clearEditor() {
-    playerIdInput.value = "";
-    playerNameInput.value = "";
-    playerSettingInput.value = "";
-    tagList.innerHTML = "";
-}
-
 function renderEditor(player) {
     playerIdInput.value = player.id ?? "";
     playerNameInput.value = player.name ?? "";
@@ -248,18 +241,6 @@ document.getElementById("tagClearButton").addEventListener("click", () => {
     renderTags([]);
 });
 
-loadplayerList();
-
-if (playerList.length > 0) {
-    selectedId = playerList[0].id;
-    renderEditor(playerList[0]);
-} else {
-    selectedId = null;
-    clearEditor();
-}
-
-renderPlayerList();
-
 const iconInput = document.getElementById('iconFileInput');
 const iconPreview = document.getElementById('iconPreview');
 
@@ -349,3 +330,32 @@ async function savePlayerSettingFile(playerId, playerName, settingText) {
 
     return data;
 }
+
+function clearEditor() {
+    selectedId = null;
+
+    playerIdInput.value = "";
+    playerNameInput.value = "";
+    playerSettingInput.value = "";
+    tagList.innerHTML = "";
+
+    selectedIconFile = null;
+    selectedStandingFile = null;
+
+    iconImg.removeAttribute("src");
+    iconImg.style.display = "none";
+    iconPlaceholder.style.display = "block";
+
+    standingImg.removeAttribute("src");
+    standingImg.style.display = "none";
+    standingPlaceholder.style.display = "block";
+
+    renderPlayerList();
+}
+
+function initPlayerPageForDisplay() {
+    loadplayerList();
+    clearEditor();
+}
+
+initPlayerPageForDisplay();

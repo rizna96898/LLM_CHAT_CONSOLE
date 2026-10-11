@@ -1,3 +1,26 @@
+const DEFAULT_FLASK_BASE_URL = "http://127.0.0.1:5000";
+const BASE_CHAT_OBJECT = `
+    <div class="avatar">
+        <img class="avatar-img">
+        <span class="avatar-text"></span>
+    </div>
+    <div class="bubble">
+        <div class="name"></div>
+        <div class="message-text"></div>
+    </div>
+    `;
+
+const BASE_CHAT_OBJECT_USER = `
+    <div class="avatar">
+        <img class="avatar-img">
+        <span class="avatar-text"></span>
+    </div>
+    <div class="bubble_user">
+        <div class="name"></div>
+        <div class="message-text"></div>
+    </div>
+    `;
+
 const STORAGE_KEYS = {
   BASE_PATH: "base_path",
   BASE_CHAT_PATH: "base_chat_path",
@@ -12,13 +35,15 @@ const STORAGE_KEYS = {
   SELECTED_SESSION_ID: "selected_session_id",
 };
 
-const DEFAULT_FLASK_BASE_URL = "http://127.0.0.1:5000";
-
 const API_PATHS = {
   HEALTH: "/health",
 
+  SELECTED_SESSION: "/selected_session",
+  SELECTED_MESSAGE: "/selected_message",
   CHAT_STARTUP: "/chat_startup",
   NEW_CHAT: "/new_chat",
+  CHAT: "/chat",
+  RE_CHAT: "/re_chat",
   WORLD_START: "/world_start",
   DELETE_SESSION: "/delete_session",
   LOAD_SESSION_LIST: "/load_session_list",
