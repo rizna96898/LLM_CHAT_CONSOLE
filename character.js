@@ -88,21 +88,10 @@ function renderEditor(char) {
 
 async function loadCharacterSettings(characterId) {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.LOAD_CHARACTER_SETTINGS, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
+    const data = await postJson(API_PATHS.LOAD_CHARACTER_SETTINGS, {
         base_chat_path: baseChatPath,
-        character_id: characterId
-    })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) {
-    throw new Error(data.message || "キャラクター設定の読み込みに失敗しました。");
-    }
+        character_id: characterId,
+    }, "キャラクター設定の読み込みに失敗しました。");
     return data;
 }
 
@@ -241,24 +230,13 @@ document.getElementById("deleteButton").addEventListener("click", () => {
 document.getElementById("initializeButton").addEventListener("click", async () => {
     try {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
-    const res = await fetch(getFlaskBaseUrl() + API_PATHS.GET_TEMPLATE_CHARACTER_YAML, {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-        base_chat_path: baseChatPath
-        })
-    });
+    const data = await postJson(API_PATHS.GET_TEMPLATE_CHARACTER_YAML, {
+        base_chat_path: baseChatPath,
+    }, "テンプレ取得失敗");
 
-    const data = await res.json();
-    if (!data.ok) {
-        showToast(data.message || "テンプレ取得失敗", MESSAGE_TYPE.ERROR);
-        return;
-    }
     characterSettingInput.value = data.content;
     } catch (e) {
-        showToast(e || "サーバー接続エラー", MESSAGE_TYPE.ERROR);
+        showToast(e.message || "サーバー接続エラー", MESSAGE_TYPE.ERROR);
     }
 });
 
@@ -600,40 +578,31 @@ async function saveImageFile(imageType, file, characterId) {
     formData.append("image_type", imageType);
     formData.append("file", file);
 
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_IMAGE, {
-    method: "POST",
-    body: formData
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) {
-    settingError.textContent = data.message || "エラーが発生しました";
-    throw new Error(data.message || `${imageType}画像の保存に失敗しました。`);
+    try {
+        return await requestJson(
+            API_PATHS.SAVE_IMAGE,
+            { method: "POST", body: formData },
+            `${imageType}画像の保存に失敗しました。`
+        );
+    } catch (error) {
+        settingError.textContent = error.response?.message || "エラーが発生しました";
+        throw error;
     }
-    return data;
 }
 
 async function saveCharacterSettingFile(characterId, characterName, settingText) {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_CHARACTER_SETTING, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        base_chat_path: baseChatPath,
-        character_id: characterId,
-        character_name: characterName,
-        content: settingText
-    })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) {
-    settingError.textContent = data.message || "エラーが発生しました";
-    throw new Error(data.message || "キャラクター設定の保存に失敗しました。");
+    try {
+        return await postJson(API_PATHS.SAVE_CHARACTER_SETTING, {
+            base_chat_path: baseChatPath,
+            character_id: characterId,
+            character_name: characterName,
+            content: settingText,
+        }, "キャラクター設定の保存に失敗しました。");
+    } catch (error) {
+        settingError.textContent = error.response?.message || "エラーが発生しました";
+        throw error;
     }
-    return data;
 }
 
 // 画面表示時呼ばれる

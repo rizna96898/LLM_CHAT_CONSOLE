@@ -175,25 +175,10 @@ async function selectMessage(event) {
     console.log("名前", characterId);
     if (characterId === "system") {
         try {
-            const responseMessage = await fetch(
-                getFlaskBaseUrl() + API_PATHS.SELECTED_MESSAGE,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        line_id: lineId,
-                    }),
-                }
-            );
-
-            const resultMessage = await responseMessage.json();
-
-            if (!responseMessage.ok || !resultMessage.ok) {
-                throw new Error(resultMessage.message || "メッセージの読み込みに失敗しました");
-            }
+            const resultMessage = await postJson(API_PATHS.SELECTED_MESSAGE, {
+                session_id: sessionId,
+                line_id: lineId,
+            }, "メッセージの読み込みに失敗しました");
 
             console.log("返却内容", resultMessage);
 
@@ -275,21 +260,9 @@ async function selectSession(event) {
     try {
 
         // 新規チャット（初期処理）
-        const responseSession = await fetch(getFlaskBaseUrl() + API_PATHS.SELECTED_SESSION, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                session_id: sessionId
-            }),
-        });
-
-        const resultSession = await responseSession.json();
-
-        if (!responseSession.ok || !resultSession.ok) {
-            throw new Error(resultSession.message || "セッションの読み込みに失敗しました");
-        }
+        const resultSession = await postJson(API_PATHS.SELECTED_SESSION, {
+            session_id: sessionId,
+        }, "セッションの読み込みに失敗しました");
 
         console.log("返却内容", resultSession);
 
@@ -929,42 +902,18 @@ function renderSessionList(
 }
 
 async function postWorldStart(world) {
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.WORLD_START, {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+    const result = await postJson(API_PATHS.WORLD_START, {
         world_id: world.id,
         world_name: world.name,
-    }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.ok) {
-    throw new Error(result.message || "world_start に失敗しました");
-    }
+    }, "world_start に失敗しました");
     return result;
 }
 
 async function startNewChatBySessionId(sessionId) {
 
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            session_id: sessionId,
-        }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.ok) {
-    throw new Error(result.message || "new_chat に失敗しました");
-    }
+    const result = await postJson(API_PATHS.NEW_CHAT, {
+        session_id: sessionId,
+    }, "new_chat に失敗しました");
 
     return result;
 }
@@ -1021,22 +970,10 @@ async function startUp(worldId) {
     const basePath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH);
     const worldName = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_NAME) || "";
     try {
-        const response = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT_STARTUP, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                base_chat_path: basePath,
-                world_id: worldId,
-            }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.ok) {
-            throw new Error(result.message || "新規セッション作成に失敗しました");
-        }
+        const result = await postJson(API_PATHS.CHAT_STARTUP, {
+            base_chat_path: basePath,
+            world_id: worldId,
+        }, "新規セッション作成に失敗しました");
 
         const session = buildSessionFromNewChatResult(result, worldId, worldName);
 
@@ -1098,21 +1035,9 @@ async function postNewChat() {
         const session = await startUp(worldId);
 
         // 新規チャット（初期処理）
-        const responseNewChat = await fetch(getFlaskBaseUrl() + API_PATHS.NEW_CHAT, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                session_id: session.session_id
-            }),
-        });
-
-        const resultNewChat = await responseNewChat.json();
-
-        if (!responseNewChat.ok || !resultNewChat.ok) {
-            throw new Error(resultNewChat.message || "new_chat に失敗しました");
-        }
+        const resultNewChat = await postJson(API_PATHS.NEW_CHAT, {
+            session_id: session.session_id,
+        }, "new_chat に失敗しました");
 
         console.log("返却内容", resultNewChat);
 
@@ -1163,22 +1088,10 @@ async function postChat() {
             inputElement.value = ""
 
             // 新規チャット（初期処理）
-            const responseChat = await fetch(getFlaskBaseUrl() + API_PATHS.CHAT, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    message: message
-                }),
-            });
-
-            const resultChat = await responseChat.json();
-
-            if (!responseChat.ok || !resultChat.ok) {
-                throw new Error(resultChat.message || "発言に失敗しました");
-            }
+            const resultChat = await postJson(API_PATHS.CHAT, {
+                session_id: sessionId,
+                message: message,
+            }, "発言に失敗しました");
 
             console.log("返却内容", resultChat);
 
@@ -1232,24 +1145,12 @@ async function postReChat() {
         try {
 
             // 新規チャット（初期処理）
-            const responseReChat = await fetch(getFlaskBaseUrl() + API_PATHS.RE_CHAT, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    message: message
-                }),
-            });
+            const resultReChat = await postJson(API_PATHS.RE_CHAT, {
+                session_id: sessionId,
+                message: message,
+            }, "再送に失敗しました");
 
-            const resultReChat = await responseReChat.json();
-
-            if (!responseReChat.ok || !resultReChat.ok) {
-                throw new Error(resultReChat.message || "再送に失敗しました");
-            }
-
-            console.log("返却内容", responseReChat);
+            console.log("返却内容", resultReChat);
 
             appendChatMessage(
                 resultReChat.line_id || "",
@@ -1498,28 +1399,11 @@ function appendChatMessageByUser(lineId, id, name, text) {
 
 async function deleteSession(sessionIds) {
 
-    const response = await fetch(
-        getFlaskBaseUrl() + API_PATHS.DELETE_SESSION,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                session_ids: sessionIds,
-            }),
-        }
-    );
-
-    const result = await response.json();
+    const result = await postJson(API_PATHS.DELETE_SESSION, {
+        session_ids: sessionIds,
+    }, "セッション削除に失敗しました");
 
     console.log("削除結果", result);
-    if (!response.ok || !result.ok) {
-        throw new Error(
-            result.message ||
-            "セッション削除に失敗しました"
-        );
-    }
 
     return result;
 }
@@ -1552,24 +1436,9 @@ async function initializeMainViewFromLocalStorage() {
     }
 
     try {
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.LOAD_SESSION_LIST, {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-        world_id: selectedWorldId
-        })
-    });
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok || !result.ok) {
-        console.error(result.message || "セッション一覧の読み込みに失敗しました");
-        saveSessionList([]);
-        clearSessionList();
-        return;
-    }
+    const result = await postJson(API_PATHS.LOAD_SESSION_LIST, {
+        world_id: selectedWorldId,
+    }, "セッション一覧の読み込みに失敗しました");
 
     const sessions = normalizeSessionList(
         result.sessions ||
@@ -1596,21 +1465,11 @@ async function checkServerHealth() {
     summaryServerStatus.className = "status-wait";
 
     try {
-        const response = await fetch(getFlaskBaseUrl() + API_PATHS.HEALTH);
+        // 失敗時は例外になり、下の catch で未接続表示にする
+        await requestJson(API_PATHS.HEALTH, { method: "GET" });
 
-        if (!response.ok) {
-            throw new Error("health request failed");
-        }
-
-        const result = await response.json();
-
-        if (result.ok) {
-            summaryServerStatus.textContent = "●接続中";
-            summaryServerStatus.className = "status-ok";
-        } else {
-            summaryServerStatus.textContent = "×未接続";
-            summaryServerStatus.className = "status-error";
-        }
+        summaryServerStatus.textContent = "●接続中";
+        summaryServerStatus.className = "status-ok";
 
     } catch (error) {
     console.error(error);

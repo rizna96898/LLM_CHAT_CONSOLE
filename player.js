@@ -208,27 +208,14 @@ document.getElementById("initializeButton").addEventListener("click", async () =
     try {
         const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
 
-        const res = await fetch(getFlaskBaseUrl() + API_PATHS.GET_TEMPLATE_PLAYER_YAML, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                base_chat_path: baseChatPath
-            })
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-            showToast(data.message || "テンプレ取得失敗", MESSAGE_TYPE.ERROR);
-            return;
-        }
+        const data = await postJson(API_PATHS.GET_TEMPLATE_PLAYER_YAML, {
+            base_chat_path: baseChatPath,
+        }, "テンプレ取得失敗");
 
         playerSettingInput.value = data.content;
 
     } catch (e) {
-        showToast(e || "サーバー接続エラー", MESSAGE_TYPE.ERROR);
+        showToast(e.message || "サーバー接続エラー", MESSAGE_TYPE.ERROR);
     }
 });
 
@@ -290,45 +277,32 @@ async function saveImageFile(imageType, file, playerId) {
     formData.append("image_type", imageType);
     formData.append("file", file);
 
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_IMAGE, {
-        method: "POST",
-        body: formData
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data.ok === false) {
-        settingError.textContent = data.message || "エラーが発生しました";
-        throw new Error(data.message || `${imageType}画像の保存に失敗しました。`);
+    try {
+        return await requestJson(
+            API_PATHS.SAVE_IMAGE,
+            { method: "POST", body: formData },
+            `${imageType}画像の保存に失敗しました。`
+        );
+    } catch (error) {
+        settingError.textContent = error.response?.message || "エラーが発生しました";
+        throw error;
     }
-
-    return data;
 }
 
 async function savePlayerSettingFile(playerId, playerName, settingText) {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
 
-    const response = await fetch(getFlaskBaseUrl() + API_PATHS.SAVE_PLAYER_SETTING, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+    try {
+        return await postJson(API_PATHS.SAVE_PLAYER_SETTING, {
             base_chat_path: baseChatPath,
             player_id: playerId,
             player_name: playerName,
-            content: settingText
-        })
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data.ok === false) {
-        settingError.textContent = data.message || "エラーが発生しました";
-        throw new Error(data.message || "プレイヤー設定の保存に失敗しました。");
+            content: settingText,
+        }, "プレイヤー設定の保存に失敗しました。");
+    } catch (error) {
+        settingError.textContent = error.response?.message || "エラーが発生しました";
+        throw error;
     }
-
-    return data;
 }
 
 function clearEditor() {

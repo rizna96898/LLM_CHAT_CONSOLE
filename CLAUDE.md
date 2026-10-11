@@ -40,8 +40,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### サーバー呼び出し
 
 - 接続先は `getFlaskBaseUrl()` で取る（設定画面の入力欄 → `localStorage` → 既定値の順）。URLを直接書かない。
-- `js/common.js` の `requestJson(path, options)` が共通の呼び出し口で、HTTPエラーのほか、レスポンスの `ok === false` と `status === "error"` を例外にする。`settings.js` と `world.js` はこれを使い、`index_3column_session.js`、`character.js`、`player.js` は `fetch` を直接呼んでいる。新しく書くときは `requestJson` を使う。
-- 画像の保存（`/settings/save_image`）だけは `multipart/form-data` で送る。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする。
+- サーバーの呼び出しは `js/common.js` の `postJson(path, payload, fallbackMessage)` を使う。GETや `FormData` の送信は `requestJson(path, options, fallbackMessage)` を使う。どちらもHTTPエラーか `ok` が `true` でないときに例外を投げ、例外の `message` にサーバーの `message`、`response` に返却JSONが入る。各画面で `fetch` を直接呼ばない。
+- 画像の保存（`/settings/save_image`）だけは `FormData` を `requestJson` に渡して送る（`FormData` のときは `Content-Type` を付けない）。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする。
 - 通知は `showToast` を使う。
 
 ### チャットの流れ（メイン画面）
