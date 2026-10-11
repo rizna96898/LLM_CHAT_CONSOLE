@@ -27,13 +27,24 @@ function setMessage(element, text, type = "") {
   }
 }
 
-async function requestJson(path, options = {}) {
+/**
+ * サーバーへリクエストを送り、JSONを返す。
+ * HTTPエラー、または ok が true でない場合は例外を投げる。
+ * 例外の message にはサーバーの message、response には返却JSONが入る。
+ *
+ * @param {string} path API_PATHS の値
+ * @param {object} options fetch のオプション。body が FormData の場合は Content-Type を付けない
+ * @param {string} fallbackMessage サーバーが message を返さなかった時のエラー文言
+ */
+async function requestJson(path, options = {}, fallbackMessage = "") {
+  const isFormData = options.body instanceof FormData;
+
   const response = await fetch(`${getFlaskBaseUrl()}${path}`, {
+    ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   let data = {};
@@ -43,8 +54,8 @@ async function requestJson(path, options = {}) {
     data = {};
   }
 
-  if (!response.ok || data.ok === false || data.status === "error") {
-    const message = data.message || data.error || `サーバ返却エラー: ${response.status}`;
+  if (!response.ok || !data.ok) {
+    const message = data.message || fallbackMessage || `サーバ返却エラー: ${response.status}`;
     const error = new Error(message);
     error.response = data;
     error.status = response.status;
@@ -52,6 +63,21 @@ async function requestJson(path, options = {}) {
   }
 
   return data;
+}
+
+/**
+ * JSONをPOSTして、JSONを返す。失敗時の扱いは requestJson と同じ。
+ *
+ * @param {string} path API_PATHS の値
+ * @param {object} payload 送信する内容
+ * @param {string} fallbackMessage サーバーが message を返さなかった時のエラー文言
+ */
+function postJson(path, payload = {}, fallbackMessage = "") {
+  return requestJson(
+    path,
+    { method: "POST", body: JSON.stringify(payload) },
+    fallbackMessage
+  );
 }
 
 /**
