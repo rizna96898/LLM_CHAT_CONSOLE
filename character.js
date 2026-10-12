@@ -573,8 +573,9 @@ async function saveImageFile(imageType, file, characterId) {
 
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
     const formData = new FormData();
-    formData.append(STORAGE_KEYS.BASE_CHAT_PATH, baseChatPath);
-    formData.append("character_id", characterId);
+    formData.append("base_chat_path", baseChatPath);
+    formData.append("owner_type", "character");
+    formData.append("owner_id", characterId);
     formData.append("image_type", imageType);
     formData.append("file", file);
 

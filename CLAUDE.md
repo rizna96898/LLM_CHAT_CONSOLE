@@ -41,7 +41,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 接続先は `getFlaskBaseUrl()` で取る（設定画面の入力欄 → `localStorage` → 既定値の順）。URLを直接書かない。
 - サーバーの呼び出しは `js/common.js` の `postJson(path, payload, fallbackMessage)` を使う。GETや `FormData` の送信は `requestJson(path, options, fallbackMessage)` を使う。どちらもHTTPエラーか `ok` が `true` でないときに例外を投げ、例外の `message` にサーバーの `message`、`response` に返却JSONが入る。各画面で `fetch` を直接呼ばない。
-- 画像の保存（`/settings/save_image`）だけは `FormData` を `requestJson` に渡して送る（`FormData` のときは `Content-Type` を付けない）。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする。
+- 画像の保存（`/settings/save_image`）だけは `FormData` を `requestJson` に渡して送る（`FormData` のときは `Content-Type` を付けない）。フォームの項目は `base_chat_path`、`owner_type`（`character` / `player`）、`owner_id`、`image_type`（`icon` / `standing`）、`file`。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする（プレイヤーは `&owner_type=player` を付ける）。
 - 通知は `showToast` を使う。
 
 ### チャットの流れ（メイン画面）
@@ -51,12 +51,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. 発言 → `/chat`、再送 → `/re_chat`
 4. 既存セッションを選ぶ → `/selected_session` で履歴を読み込む。メッセージをクリック → `/selected_message`
 
-チャットの吹き出しは `js/constant.js` の `BASE_CHAT_OBJECT` / `BASE_CHAT_OBJECT_USER` をひな形にして組み立てる。アイコン画像は `characters/icon/{id}/{id}.png` を相対パスで直接参照する。
+チャットの吹き出しは `js/constant.js` の `BASE_CHAT_OBJECT` / `BASE_CHAT_OBJECT_USER` をひな形にして組み立てる。チャット画面のアイコンと立ち絵は、`characters/` を直接読まず、`buildSessionImageUrl` で `/session_image/{セッションID}/{icon|standing}/{キャラクターID}` から読む。新規チャット時にサーバーがセッションフォルダへ退避した画像なので、後からキャラクター画面で画像を変えても進行中のチャットには影響しない。画像がない場合（プレイヤー、システムを含む）は名前の頭文字を表示する。
 
 ### データフォルダ
 
 - `characters/settings/{id}_setting.yaml`、`characters/icon/{id}/{id}.png`、`characters/standing/{id}/{id}_standing.png`
-- `players/settings/{id}_setting.yaml`
+- `players/settings/{id}_setting.yaml`、`players/icon/{id}/{id}.png`、`players/standing/{id}/{id}_standing.png`
 - `worlds/settings/{世界ID}_world.yaml`
 - 各 `template/` はフォームの初期値になるテンプレートYAML。サーバーの `/settings/get_template_*` 経由で読む
 

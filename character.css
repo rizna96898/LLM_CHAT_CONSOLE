@@ -670,3 +670,129 @@ textarea {
     aspect-ratio: 2 / 3;
   }
 }
+
+/* アイコン範囲指定（切り抜き）ウィンドウ */
+.crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(17, 24, 39, 0.55);
+}
+
+.crop-overlay.hidden {
+  display: none;
+}
+
+.crop-window {
+  width: min(460px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.crop-header,
+.crop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--panel-soft);
+}
+
+.crop-header {
+  border-bottom: 1px solid var(--line);
+}
+
+.crop-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+
+.crop-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  min-height: 0;
+  overflow: auto;
+}
+
+/*
+ * 画像を動かす領域。
+ * 切り抜き枠は character.js の getCropBoxRect() と同じ計算
+ * （領域の短辺の72%の正方形を中央に置く）なので、正方形を保つこと。
+ */
+.crop-stage {
+  position: relative;
+  /* 画面が低い時にOKボタンが隠れないよう、高さ側でも抑える */
+  width: min(100%, 60vh);
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #111827;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.crop-stage:active {
+  cursor: grabbing;
+}
+
+/* 位置と大きさは character.js が width / height / transform で指定する */
+.crop-stage img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 枠の外側を暗くする */
+.crop-mask {
+  position: absolute;
+  left: 14%;
+  top: 14%;
+  width: 72%;
+  height: 72%;
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.crop-frame {
+  position: absolute;
+  left: 14%;
+  top: 14%;
+  width: 72%;
+  height: 72%;
+  border: 2px solid #ffffff;
+  pointer-events: none;
+}
+
+.crop-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.crop-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
