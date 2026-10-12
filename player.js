@@ -79,6 +79,52 @@ function renderEditor(player) {
     playerNameInput.value = player.name ?? "";
     playerSettingInput.value = player.setting ?? "";
     renderTags(player.tags ?? []);
+    loadPlayerImages(player.id ?? "");
+}
+
+function buildImageUrl(imageType, playerId) {
+    const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+    if (!baseChatPath || !playerId) return "";
+
+    const encodedType = encodeURIComponent(imageType);
+    const encodedId = encodeURIComponent(playerId);
+    const encodedBasePath = encodeURIComponent(baseChatPath);
+
+    // キャッシュ対策。保存直後に同じURLを読んでも古い画像が残らないようにする。
+    const cacheBuster = Date.now();
+
+    return getFlaskBaseUrl() + API_PATHS.LOAD_IMAGE + `/${encodedType}/${encodedId}?owner_type=player&base_chat_path=${encodedBasePath}&v=${cacheBuster}`;
+}
+
+function applyImageUrl(img, placeholder, imageUrl) {
+    img.removeAttribute("src");
+    img.style.display = "none";
+    placeholder.style.display = "block";
+
+    if (!imageUrl) return;
+
+    img.onload = () => {
+        img.style.display = "block";
+        placeholder.style.display = "none";
+    };
+
+    // 保存済みの画像が無い場合は、初期表示のままにする
+    img.onerror = () => {
+        img.removeAttribute("src");
+        img.style.display = "none";
+        placeholder.style.display = "block";
+    };
+
+    img.src = imageUrl;
+}
+
+// 保存済みのアイコンと立ち絵をサーバーから読み込む
+function loadPlayerImages(playerId) {
+    selectedIconFile = null;
+    selectedStandingFile = null;
+
+    applyImageUrl(iconImg, iconPlaceholder, buildImageUrl("icon", playerId));
+    applyImageUrl(standingImg, standingPlaceholder, buildImageUrl("standing", playerId));
 }
 
 function renderTags(tags) {
@@ -272,8 +318,9 @@ async function saveImageFile(imageType, file, playerId) {
     const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
     const formData = new FormData();
 
-    formData.append(STORAGE_KEYS.BASE_CHAT_PATH, baseChatPath);
-    formData.append("player_id", playerId);
+    formData.append("base_chat_path", baseChatPath);
+    formData.append("owner_type", "player");
+    formData.append("owner_id", playerId);
     formData.append("image_type", imageType);
     formData.append("file", file);
 

@@ -41,7 +41,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 接続先は `getFlaskBaseUrl()` で取る（設定画面の入力欄 → `localStorage` → 既定値の順）。URLを直接書かない。
 - サーバーの呼び出しは `js/common.js` の `postJson(path, payload, fallbackMessage)` を使う。GETや `FormData` の送信は `requestJson(path, options, fallbackMessage)` を使う。どちらもHTTPエラーか `ok` が `true` でないときに例外を投げ、例外の `message` にサーバーの `message`、`response` に返却JSONが入る。各画面で `fetch` を直接呼ばない。
-- 画像の保存（`/settings/save_image`）だけは `FormData` を `requestJson` に渡して送る（`FormData` のときは `Content-Type` を付けない）。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする。
+- 画像の保存（`/settings/save_image`）だけは `FormData` を `requestJson` に渡して送る（`FormData` のときは `Content-Type` を付けない）。フォームの項目は `base_chat_path`、`owner_type`（`character` / `player`）、`owner_id`、`image_type`（`icon` / `standing`）、`file`。画像の表示は `/settings/load_image/{icon|standing}/{id}?base_chat_path=...` をそのまま `<img>` のURLにする（プレイヤーは `&owner_type=player` を付ける）。
 - 通知は `showToast` を使う。
 
 ### チャットの流れ（メイン画面）
@@ -56,7 +56,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### データフォルダ
 
 - `characters/settings/{id}_setting.yaml`、`characters/icon/{id}/{id}.png`、`characters/standing/{id}/{id}_standing.png`
-- `players/settings/{id}_setting.yaml`
+- `players/settings/{id}_setting.yaml`、`players/icon/{id}/{id}.png`、`players/standing/{id}/{id}_standing.png`
 - `worlds/settings/{世界ID}_world.yaml`
 - 各 `template/` はフォームの初期値になるテンプレートYAML。サーバーの `/settings/get_template_*` 経由で読む
 
