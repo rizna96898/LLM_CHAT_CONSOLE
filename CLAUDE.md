@@ -16,6 +16,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ビルド、パッケージ管理、テスト、リンターはない。素のHTML/CSS/JSで、`index_3column_session.html` をブラウザで開いて使う。`jsconfig.json` はエディタ用の設定のみ。
 
+検証用のスキルは、サーバー側のリポジトリ（`z:\LocalFlaskServer\.claude\skills\`）に置いてある。実行もそちらのルートから行う。
+
+- `verify-ui`: JSの構文と未宣言の変数の検査（`js_check.py --base main`）と、Edge を画面なしで起動してのスクリーンショット（`screenshot.py`）。HTML・CSS・JS を変更したら、PRの前に通す。見た目を作った・直したときは、スクリーンショットを撮って目で確かめる。
+- `verify-api`: サーバー側のAPIを、本物のデータに触れずに実際に呼ぶ。
+
+スキルで確かめられないこと（ドラッグなどの連続した操作、iframe の子画面どうしの連携、実際のサーバーとつないだ流れ）は、PRの説明に「未確認」と書いて、ユーザーに実機での確認を頼む。
+
 動作確認にはサーバー側の起動が必要（`LocalFlaskServer` の `CLAUDE.md` を参照）。初回は画面の「接続環境設定」で次の3つを入力して「適用」する。値は `localStorage` に保存される。
 
 - FlaskサーバーURL（未設定時は `http://127.0.0.1:5000`。サブPCで動かす場合はそのIP）
@@ -63,6 +70,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ファイル名の規則（`_setting.yaml`、`_world.yaml`、`_standing.png`）はサーバー側のコードが前提にしている。
 
 YAMLを入力する欄の検証は `js/common.js` の `validateSimpleYamlText` で、1行に `:` は1つまで、タブ不可という簡易ルール。
+
+## 作業の進め方
+
+サーバー側の `CLAUDE.md` の「作業の進め方」と同じ（区切りごとにPR、範囲は先に確認、マージはユーザーの動作確認のあと）。Web側で特に注意する点:
+
+- **コミットに入れるファイルは名前で指定する**: `characters/`、`players/`、`worlds/` は画面から保存される実データで、ユーザーの動作確認で書き換わっていることがある。`git add -A` でまとめて入れない。
+- サーバーとまたがる変更は、同名のブランチでPRを2本作る。
+- 仕様や構成を変えたら、同じPRでこのファイルの該当箇所を更新する。
 
 ## 現状の注意点
 
