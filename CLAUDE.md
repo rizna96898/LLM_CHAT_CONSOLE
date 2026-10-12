@@ -51,7 +51,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. 発言 → `/chat`、再送 → `/re_chat`
 4. 既存セッションを選ぶ → `/selected_session` で履歴を読み込む。メッセージをクリック → `/selected_message`
 
-チャットの吹き出しは `js/constant.js` の `BASE_CHAT_OBJECT` / `BASE_CHAT_OBJECT_USER` をひな形にして組み立てる。アイコン画像は `characters/icon/{id}/{id}.png` を相対パスで直接参照する。
+チャットの吹き出しは `js/constant.js` の `BASE_CHAT_OBJECT` / `BASE_CHAT_OBJECT_USER` をひな形にして組み立てる。チャット画面のアイコンと立ち絵は、`characters/` を直接読まず、`buildSessionImageUrl` で `/session_image/{セッションID}/{icon|standing}/{キャラクターID}` から読む。新規チャット時にサーバーがセッションフォルダへ退避した画像なので、後からキャラクター画面で画像を変えても進行中のチャットには影響しない。画像がない場合（プレイヤー、システムを含む）は名前の頭文字を表示する。
 
 ### データフォルダ
 

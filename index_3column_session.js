@@ -113,6 +113,28 @@ window.addEventListener('message', (event) => {
 });
 
 /**
+ * チャット画面で使う画像のURLを作る。
+ * 新規チャット時にサーバーがセッションフォルダへ退避した画像を読むので、
+ * 後からキャラクター画面で画像を変えても、進行中のチャットには影響しない。
+ *
+ * @param {string} imageType "icon" または "standing"
+ * @param {string} characterId キャラクターID
+ * @returns {string} URL。セッション未選択などで作れない場合は空文字
+ */
+function buildSessionImageUrl(imageType, characterId) {
+    const sessionId =
+        localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+
+    // プレイヤーとシステムは退避された画像を持たない
+    if (!sessionId || !characterId || characterId === "player" || characterId === "system") {
+        return "";
+    }
+
+    return getFlaskBaseUrl() + API_PATHS.SESSION_IMAGE +
+        `/${encodeURIComponent(sessionId)}/${encodeURIComponent(imageType)}/${encodeURIComponent(characterId)}`;
+}
+
+/**
  * 立ち絵を初期表示へ戻す。
  */
 function resetStandee() {
@@ -132,6 +154,11 @@ function resetStandee() {
 function showStandeeImage(imagePath, altText = "") {
     const stand = document.querySelector(".standee-box");
     if (!stand) return;
+
+    if (!imagePath) {
+        resetStandee();
+        return;
+    }
 
     const img = document.createElement("img");
     img.className = "stand-img";
@@ -238,7 +265,7 @@ async function selectMessage(event) {
     if (!characterId) return;
 
     showStandeeImage(
-        `characters/standing/${characterId}/${characterId}_standing.png`,
+        buildSessionImageUrl("standing", characterId),
         name
     );
 }
@@ -1315,22 +1342,30 @@ function createChatMessage(chatObject, rowData, lineId, id, name, text, classId)
     const img = message.querySelector(".avatar-img");
     const avatarTextElement = message.querySelector(".avatar-text");
 
-    img.src = `characters/icon/${id}/${id}.png`;   // 例
     img.alt = name;
-    
+
     img.onload = () => {
         avatar.style.border = "none";
         avatar.style.background = "transparent";
     };
 
     // 画像が無い場合は頭文字を表示
-    img.onerror = () => {
+    const showInitial = () => {
         img.style.display = "none";
-        avatarTextElement.style.display = "flex";
         avatarTextElement.style.display = "flex";
         avatarTextElement.textContent =
             (name || "？").substring(0, 1);
     };
+
+    img.onerror = showInitial;
+
+    const iconUrl = buildSessionImageUrl("icon", id);
+
+    if (iconUrl) {
+        img.src = iconUrl;
+    } else {
+        showInitial();
+    }
 
     bubble.dataset.lineId = lineId;
     bubble.dataset.characterId = id;
