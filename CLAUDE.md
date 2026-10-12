@@ -79,8 +79,11 @@ YAMLを入力する欄の検証は `js/common.js` の `validateSimpleYamlText` �
 - サーバーとまたがる変更は、同名のブランチでPRを2本作る。
 - 仕様や構成を変えたら、同じPRでこのファイルの該当箇所を更新する。
 
-## 現状の注意点
+## 仕様と現状の文書
 
-- `README.txt` は設定画面を追加したときのメモで、`flask_settings_api.py` は存在しない。該当のAPIは `LocalFlaskServer` に実装されている。
-- サーバーのレスポンスは、成功 `{"ok": true, ...}`、失敗 `{"ok": false, "message": "..."}` ＋HTTPステータスに統一している。画面側は `ok` で判定し、失敗時は `message` を表示する。
-- `/chat` と `/re_chat` はサーバー側が作りかけで、話者は `shirai_yui` 固定、`/re_chat` は固定文を返す。
+APIの仕様と、作りかけ・未実装・既知の不具合の一覧は、サーバー側のリポジトリにまとめてある（画面側の分も含む）。
+
+- `z:\LocalFlaskServer\docs\spec\api.md`: APIの一覧、リクエストの項目、レスポンスの形。サーバーの呼び出しを足す・変える前に読む。
+- `z:\LocalFlaskServer\docs\status.md`: 仮の実装、未実装、既知の不具合。見た目だけで処理がつながっていないボタンや入力欄もここに書いてある。
+
+サーバーのレスポンスは、成功 `{"ok": true, ...}`、失敗 `{"ok": false, "message": "..."}` ＋HTTPステータス。画面側は `ok` で判定し、失敗時は `message` を表示する（`requestJson` / `postJson` がこの判定をしている）。
