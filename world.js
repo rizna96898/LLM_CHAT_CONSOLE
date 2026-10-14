@@ -298,39 +298,39 @@ function applyWorldSettings(data) {
 
   setTextareaValue(
     "worldIncludePlayerYaml",
-    getWorldSettingValue(data, "登場人物", "characters", "world_include_player_yaml")
+    getWorldSettingValue(data, "include_data")
   );
   setTextareaValue(
     "worldGoalSettingYaml",
-    getWorldSettingValue(data, "シナリオの目標", "goal_target", "world_goal_setting_yaml")
+    getWorldSettingValue(data, "goal_data")
   );
   setTextareaValue(
     "pastInput",
-    getWorldSettingValue(data, "過去", "past")
+    getWorldSettingValue(data, "past")
   );
   setTextareaValue(
     "currentInput",
-    getWorldSettingValue(data, "現在", "now")
+    getWorldSettingValue(data, "current")
   );
   setTextareaValue(
     "futureInput",
-    getWorldSettingValue(data, "未来", "future")
+    getWorldSettingValue(data, "future")
   );
   setTextareaValue(
     "worldParameterSettingYaml",
-    getWorldSettingValue(data, "シナリオパラメータ", "scenario_parameter", "world_parameter_setting_yaml")
+    getWorldSettingValue(data, "parameter_data")
   );
   setTextareaValue(
     "purposeInput",
-    getWorldSettingValue(data, "目的", "purpose")
+    getWorldSettingValue(data, "purpose")
   );
   setTextareaValue(
     "supplementInput",
-    getWorldSettingValue(data, "補足", "supplement")
+    getWorldSettingValue(data, "supplement")
   );
   setTextareaValue(
     "startMessageInput",
-    getWorldSettingValue(data, "開始メッセージ", "start_message")
+    getWorldSettingValue(data, "start_message")
   );
 }
 
@@ -633,6 +633,12 @@ function validateParticipants(items) {
 
     errors.push(`${no}件目: 参照種別は player / character / inline / null のみです`);
   });
+
+  // プレイヤーは必ず1人
+  const playerCount = items.filter(item => item && item["参照種別"] === "player").length;
+  if (playerCount !== 1) {
+    errors.push(`player は1人だけにしてください（今は ${playerCount} 人）`);
+  }
 
   return {
     ok: errors.length === 0,

@@ -49,7 +49,13 @@ healthCheckButton.addEventListener("click", async () => {
     await requestJson(API_PATHS.HEALTH, { method: "GET" });
     setServerDependentButtonsEnabled(true);
     setMessage(healthMessage, "接続成功", MESSAGE_TYPE.SUCCESS);
-  } catch (_) {
+  } catch (error) {
+    if (error.response?.status === "ng") {
+      // サーバーは起動しているが、異常がある
+      setServerDependentButtonsEnabled(false);
+      setMessage(healthMessage, "サーバーは起動していますが、異常があります: " + (error.message || ""), MESSAGE_TYPE.ERROR);
+      return;
+    }
     handleServerDown();
   }
 });

@@ -975,3 +975,7 @@ button, select, input, textarea { font: inherit; }
 .status-error {
     color: #d94a4a;
 }
+
+.status-warn {
+    color: #c98a00;
+}

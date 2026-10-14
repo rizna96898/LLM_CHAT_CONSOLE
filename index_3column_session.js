@@ -1500,17 +1500,29 @@ async function checkServerHealth() {
     summaryServerStatus.className = "status-wait";
 
     try {
-        // 失敗時は例外になり、下の catch で未接続表示にする
+        // 正常（status: ok）なら接続中。それ以外は例外になり、下の catch で振り分ける
         await requestJson(API_PATHS.HEALTH, { method: "GET" });
 
         summaryServerStatus.textContent = "●接続中";
         summaryServerStatus.className = "status-ok";
+        summaryServerStatus.title = "";
 
     } catch (error) {
-    console.error(error);
+        console.error(error);
 
-    summaryServerStatus.textContent = "×未接続";
-    summaryServerStatus.className = "status-error";
+        if (error.response?.status === "ng") {
+            // サーバーは起動しているが、異常がある
+            summaryServerStatus.textContent = "▲異常";
+            summaryServerStatus.className = "status-warn";
+            summaryServerStatus.title = error.message || "";
+            showToast("サーバーに異常があります: " + (error.message || ""), MESSAGE_TYPE.ERROR);
+            return;
+        }
+
+        // 応答が無い（サーバーが止まっている、接続先が違う）
+        summaryServerStatus.textContent = "×未接続";
+        summaryServerStatus.className = "status-error";
+        summaryServerStatus.title = "";
     }
 }
 
