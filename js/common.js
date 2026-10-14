@@ -90,10 +90,9 @@ function showToast(message, result) {
   const toast = document.createElement("div");
 
   toast.textContent = message;
-  toast.style.position = "fixed";
-  toast.style.top = "16px";
-  toast.style.right = "16px";
   toast.style.padding = "10px 16px";
+  toast.style.maxWidth = "480px";
+  toast.style.overflowWrap = "anywhere";
   // 種類で色を分ける（エラーは赤、案内は青、それ以外は緑）
   const colors = {
     [MESSAGE_TYPE.ERROR]: "#dc2626",
@@ -106,12 +105,33 @@ function showToast(message, result) {
   toast.style.fontWeight = "700";
   toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
 
-  document.body.appendChild(toast);
+  // 同時に出ても重ならないよう、右上の置き場に縦に並べる
+  getToastContainer().appendChild(toast);
 
   // エラーは文が長くなりがちなので、長めに出す
   setTimeout(() => {
     toast.remove();
   }, result === MESSAGE_TYPE.ERROR ? 5000 : 2500);
+}
+
+// 通知の置き場（右上）。無ければ作る。新しい通知ほど下に足される
+function getToastContainer() {
+  let container = document.getElementById("toastContainer");
+  if (container) return container;
+
+  container = document.createElement("div");
+  container.id = "toastContainer";
+  container.style.position = "fixed";
+  container.style.top = "16px";
+  container.style.right = "16px";
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.alignItems = "flex-end";
+  container.style.gap = "8px";
+  container.style.zIndex = "9999";
+  container.style.pointerEvents = "none";   // 通知の下の画面を押せるようにする
+  document.body.appendChild(container);
+  return container;
 }
 
 /**
