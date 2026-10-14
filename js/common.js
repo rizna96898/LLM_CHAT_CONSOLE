@@ -94,7 +94,12 @@ function showToast(message, result) {
   toast.style.top = "16px";
   toast.style.right = "16px";
   toast.style.padding = "10px 16px";
-  toast.style.background = "#22c55e";
+  // 種類で色を分ける（エラーは赤、案内は青、それ以外は緑）
+  const colors = {
+    [MESSAGE_TYPE.ERROR]: "#dc2626",
+    [MESSAGE_TYPE.INFO]: "#2563eb",
+  };
+  toast.style.background = colors[result] || "#22c55e";
   toast.style.color = "#fff";
   toast.style.borderRadius = "8px";
   toast.style.zIndex = "9999";
@@ -103,9 +108,10 @@ function showToast(message, result) {
 
   document.body.appendChild(toast);
 
+  // エラーは文が長くなりがちなので、長めに出す
   setTimeout(() => {
     toast.remove();
-  }, 2500);
+  }, result === MESSAGE_TYPE.ERROR ? 5000 : 2500);
 }
 
 /**
