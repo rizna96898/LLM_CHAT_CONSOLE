@@ -141,6 +141,46 @@ async function refreshSettingsList(kind) {
   return items;
 }
 
+/**
+ * 世界・キャラクター・プレイヤーを、確認のうえファイルごと削除し、一覧を取り直す。
+ * キャラクター・プレイヤーは、使っている世界があるとサーバーが断る（その世界名が message に入る）。
+ *
+ * @param {"world"|"character"|"player"} kind
+ * @param {string} id
+ * @param {string} name 確認に出す名前
+ * @returns {Promise<boolean>} 削除したら true（取りやめ・失敗は false。失敗は通知を出す）
+ */
+async function deleteSettingWithConfirm(kind, id, name) {
+  const what = { world: "世界", character: "キャラクター", player: "プレイヤー" }[kind];
+  const files = kind === "world"
+    ? "世界設定のファイルが消えます（この世界のセッションは残ります）。"
+    : "設定のファイルと、アイコン・立ち絵の画像が消えます。";
+
+  if (!confirm(`${what}「${name || id}」（${id}）を削除します。\n${files}\n元に戻せません。よろしいですか？`)) {
+    return false;
+  }
+
+  try {
+    await postJson(API_PATHS.DELETE_SETTING, {
+      base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+      kind: kind,
+      id: id,
+    }, `${what}の削除に失敗しました`);
+  } catch (error) {
+    showToast(error.message || `${what}の削除に失敗しました`, MESSAGE_TYPE.ERROR);
+    return false;
+  }
+
+  showToast(`${what}「${name || id}」を削除しました`, MESSAGE_TYPE.SUCCESS);
+
+  try {
+    await refreshSettingsList(kind);
+  } catch (error) {
+    showToast(error.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+  }
+  return true;
+}
+
 function getStorageArray(key) {
   try {
     const raw = localStorage.getItem(key);

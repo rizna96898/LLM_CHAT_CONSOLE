@@ -66,6 +66,7 @@ const API_PATHS = {
   LOAD_PLAYER_SETTINGS: "/settings/load_player_settings",
 
   LIST_SETTINGS: "/settings/list_settings",
+  DELETE_SETTING: "/settings/delete_setting",
 
   GET_TEMPLATE_WORLD_INCLUDE_PLAYER_YAML: "/settings/get_template_world_include_player_yaml",
   GET_TEMPLATE_WORLD_GOAL_SETTING_YAML: "/settings/get_template_world_goal_setting_yaml",

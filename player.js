@@ -278,17 +278,24 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     await renderEditorFromServer(saveId);
 });
 
-document.getElementById("deleteButton").addEventListener("click", () => {
+document.getElementById("deleteButton").addEventListener("click", async () => {
     if (!selectedId) return;
 
-    playerList = playerList.filter(player => player.id !== selectedId);
-    selectedId = playerList[0]?.id ?? null;
+    const player = getSelectedPlayer();
 
-    saveplayerList();
+    // まだ保存していない新規は、一覧から外すだけ
+    if (player?.isPending) {
+        playerList = playerList.filter(p => p.id !== selectedId);
+    } else {
+        // ファイルごと消す。世界で使われていれば、サーバーが断る（世界名を通知に出す）
+        const deleted = await deleteSettingWithConfirm("player", selectedId, player?.name);
+        if (!deleted) return;
+        loadplayerList();
+    }
+
+    selectedId = null;
     renderPlayerList();
-
-    const nextPlayer = getSelectedPlayer();
-    renderEditor(nextPlayer ?? createNewPlayer());
+    clearEditor();
 });
 
 document.getElementById("initializeButton").addEventListener("click", async () => {
