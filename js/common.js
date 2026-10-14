@@ -108,6 +108,39 @@ function showToast(message, result) {
   }, 2500);
 }
 
+/**
+ * 世界・キャラクター・プレイヤーの一覧を、サーバー（フォルダのYAML）から取り直して localStorage に書く。
+ * 一覧を使う他の処理（世界画面の参照IDの確認など）は、今までどおり localStorage を読めばよい。
+ * タグはブラウザにしか無いので、同じIDの項目から引き継ぐ。
+ * 取れなかったときは例外を投げる（localStorage は書き換えない）。
+ *
+ * @param {"world"|"character"|"player"} kind
+ * @returns {Promise<Array<{id: string, name: string}>>}
+ */
+async function refreshSettingsList(kind) {
+  const storageKey = {
+    world: STORAGE_KEYS.WORLD_LIST,
+    character: STORAGE_KEYS.CHARACTER_LIST,
+    player: STORAGE_KEYS.PLAYER_LIST,
+  }[kind];
+
+  const data = await postJson(API_PATHS.LIST_SETTINGS, {
+    base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+    kind: kind,
+  }, "一覧の取得に失敗しました");
+
+  const current = getStorageArray(storageKey);
+  const items = (data.items || []).map(item => {
+    const old = current.find(c => c && c.id === item.id);
+    const next = { id: item.id, name: item.name };
+    if (old && Array.isArray(old.tags)) next.tags = old.tags;
+    return next;
+  });
+
+  localStorage.setItem(storageKey, JSON.stringify(items));
+  return items;
+}
+
 function getStorageArray(key) {
   try {
     const raw = localStorage.getItem(key);

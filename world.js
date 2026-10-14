@@ -362,10 +362,21 @@ function clearWorldForm() {
   if (worldNameInput) worldNameInput.value = "";
 }
 
-function initWorldPageForDisplay() {
+async function initWorldPageForDisplay() {
   clearWorldForm();
   clearWorldEditorContents();
   clearParticipantTable();
+
+  renderWorldList();
+
+  // 一覧はフォルダの中身から作る。キャラクターとプレイヤーの一覧は、登場人物の参照IDの確認に使う
+  const results = await Promise.allSettled(
+    ["world", "character", "player"].map(kind => refreshSettingsList(kind))
+  );
+  const failed = results.find(r => r.status === "rejected");
+  if (failed) {
+    showToast(failed.reason?.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+  }
 
   renderWorldList();
 }

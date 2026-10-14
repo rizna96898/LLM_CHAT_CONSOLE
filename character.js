@@ -95,6 +95,16 @@ async function loadCharacterSettings(characterId) {
     return data;
 }
 
+// 一覧をフォルダから取り直す。取れなければ、ブラウザに残っている一覧を使う
+async function reloadCharList() {
+    try {
+        await refreshSettingsList("character");
+    } catch (error) {
+        showToast(error.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+    }
+    loadCharList();
+}
+
 async function renderEditorFromServer(characterId) {
     clearEditor();
     settingError.textContent = "";
@@ -212,8 +222,8 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     char.setting = saveSetting;
     selectedId = char.id;
 
-    saveCharList();
-    loadCharList();
+    await reloadCharList();
+    selectedId = saveId;
     renderCharacterList();
     await renderEditorFromServer(selectedId);
 });
@@ -611,3 +621,6 @@ loadCharList();
 selectedId = null;
 clearEditor();
 renderCharacterList();
+
+// 一覧はフォルダの中身から作る
+reloadCharList().then(renderCharacterList);
