@@ -254,7 +254,7 @@ async function selectMessage(event) {
             );
         } finally {
             if (chatButton) {
-                chatButton.disabled = false;
+                chatButton.disabled = memoryWatch.preparing;
                 chatButton.textContent = "発言";
             }
         }
@@ -321,12 +321,15 @@ async function selectSession(event) {
             }
         }
 
+        // 初期記憶がまだ作成中なら、終わるまで発言系のボタンを止める。失敗していたら知らせる
+        watchMemoryPreparation(sessionId);
+
     } catch (error) {
         console.error(error);
         showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
     } finally {
         if (chatButton) {
-            chatButton.disabled = false;
+            chatButton.disabled = memoryWatch.preparing;
             chatButton.textContent = "発言";
         }
     }
@@ -1077,6 +1080,9 @@ async function postNewChat() {
             resultNewChat.message || ""
         );
 
+        // 裏で初期記憶を作っている。終わるまで発言系のボタンを止め、進み具合を出す
+        watchMemoryPreparation(session.session_id);
+
     } catch (error) {
         console.error(error);
         showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
@@ -1134,7 +1140,7 @@ async function postChat() {
             showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
         } finally {
             if (chatButton) {
-                chatButton.disabled = false;
+                chatButton.disabled = memoryWatch.preparing;
                 chatButton.textContent = "発言";
             }
         }
@@ -1191,7 +1197,7 @@ async function postReChat() {
             showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
         } finally {
             if (reChatButton) {
-                reChatButton.disabled = false;
+                reChatButton.disabled = memoryWatch.preparing;
                 reChatButton.textContent = "再送";
             }
         }
@@ -1230,7 +1236,137 @@ function closeWorldSelect() {
     worldSelectPopup.classList.add("hidden");
 }
 
+// ============================================================
+// 初期記憶の進み具合
+// 新規チャットのあと、サーバーは裏で初期記憶（世界の記憶とキャラクターの記憶）を作る。
+// 作っている間は発言・再送を止め、プログレスバーを出す。終われば（成否を問わず）ボタンを戻し、
+// 失敗していたらその旨を出す。状態は /session_status で1秒ごとに問い合わせる。
+// ============================================================
+const MEMORY_POLL_INTERVAL_MS = 1000;
+const MEMORY_STAGE_NAMES = { world: "世界の記憶", character: "キャラクターの記憶" };
+
+const memoryWatch = {
+    sessionId: "",      // 見張っているセッション
+    timer: null,
+    preparing: false,   // true の間は発言・再送を止める
+    sawRunning: false,  // 作成中を一度でも見たか（終わったときに知らせるかどうか）
+};
+
+function setSendButtonsLocked(locked) {
+    memoryWatch.preparing = locked;
+
+    for (const button of [chatButton, reChatButton]) {
+        if (!button) continue;
+        button.disabled = locked;
+        button.title = locked ? "初期記憶を作成中です。終わるまでお待ちください" : "";
+    }
+}
+
+/**
+ * 入力欄の上の表示を切り替える。
+ *
+ * @param {"running"|"error"|"hidden"} mode
+ * @param {string} text 表示する文
+ * @param {number} done 終わった段階の数（running のとき）
+ * @param {number} total 全段階の数（running のとき）
+ * @param {string} detail マウスを載せたときに出す詳細
+ */
+function showMemoryProgress(mode, text = "", done = 0, total = 0, detail = "") {
+    const box = document.getElementById("memoryProgress");
+    const label = document.getElementById("memoryProgressLabel");
+    const bar = document.getElementById("memoryProgressBar");
+    if (!box || !label || !bar) return;
+
+    box.classList.toggle("hidden", mode === "hidden");
+    box.classList.toggle("is-error", mode === "error");
+    label.textContent = text;
+    box.title = detail;
+
+    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+    bar.style.width = `${percent}%`;
+}
+
+function stopMemoryWatch() {
+    if (memoryWatch.timer) {
+        clearTimeout(memoryWatch.timer);
+    }
+    memoryWatch.timer = null;
+    memoryWatch.sessionId = "";
+    memoryWatch.sawRunning = false;
+}
+
+function watchMemoryPreparation(sessionId) {
+    stopMemoryWatch();
+    if (!sessionId) return;
+
+    memoryWatch.sessionId = sessionId;
+    pollMemoryStatus(sessionId);
+}
+
+async function pollMemoryStatus(sessionId) {
+    // 別のセッションに切り替わっていたら、何もしない
+    if (memoryWatch.sessionId !== sessionId) return;
+
+    let result;
+    try {
+        result = await postJson(API_PATHS.SESSION_STATUS, {
+            session_id: sessionId,
+        }, "セッションの状態を取得できませんでした");
+    } catch (error) {
+        // 状態が取れない（古いセッション、サーバーが止まった など）。止めずに使えるようにする
+        console.error(error);
+        if (memoryWatch.sessionId === sessionId) {
+            stopMemoryWatch();
+            setSendButtonsLocked(false);
+            showMemoryProgress("hidden");
+        }
+        return;
+    }
+
+    if (memoryWatch.sessionId !== sessionId) return;
+
+    const isNewChat = result.complete_stage === "new_chat";
+    const progress = result.progress || {};
+
+    // 作成中
+    if (isNewChat && result.status === "processing") {
+        memoryWatch.sawRunning = true;
+        setSendButtonsLocked(true);
+
+        const total = Number(progress.total) || 0;
+        const done = Math.min(Number(progress.done) || 0, total);
+        const step = total > 0 ? `（${done}/${total}）` : "";
+        showMemoryProgress("running", `初期記憶を作成中: ${progress.label || "準備中"} ${step}`, done, total);
+
+        memoryWatch.timer = setTimeout(() => pollMemoryStatus(sessionId), MEMORY_POLL_INTERVAL_MS);
+        return;
+    }
+
+    // 終わった（成否は問わずボタンは戻す）
+    setSendButtonsLocked(false);
+
+    if (isNewChat && result.status === "error") {
+        const stage = MEMORY_STAGE_NAMES[result.error_stage] || "初期記憶";
+        const text = `初期記憶の作成に失敗しました（${stage}）。新規チャットを押し直してください。`;
+        showMemoryProgress("error", text, 0, 0, result.error_message || "");
+        if (memoryWatch.sawRunning) {
+            showToast(text, MESSAGE_TYPE.ERROR);
+        }
+    } else {
+        showMemoryProgress("hidden");
+        if (memoryWatch.sawRunning) {
+            showToast("初期記憶ができました", MESSAGE_TYPE.SUCCESS);
+        }
+    }
+
+    stopMemoryWatch();
+}
+
 function resetMainView() {
+    stopMemoryWatch();
+    setSendButtonsLocked(false);
+    showMemoryProgress("hidden");
+
     const chatLog = document.querySelector(".chat-log");
     const worldList = document.querySelector(".world-list");
     const parameterStrip =

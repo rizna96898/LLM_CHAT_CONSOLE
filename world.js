@@ -614,6 +614,12 @@ function validateParticipants(items) {
     }
 
     if (refType === "inline") {
+      // サブ・モブにも参照ID（キャラクターID）は必須。セッションのファイル名に使う。存在確認はしない
+      if (!refId || refId === "null" || !/^[A-Za-z0-9_]+$/.test(String(refId))) {
+        errors.push(`${no}件目: inline の参照IDは半角英数字と_で必ず入れてください`);
+        return;
+      }
+
       if (!displayName || displayName === "null") {
         errors.push(`${no}件目: inline は表示名が必須です`);
         return;

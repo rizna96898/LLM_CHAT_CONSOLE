@@ -381,8 +381,57 @@ button, select, input, textarea { font: inherit; }
     border-radius: 10px;
     box-shadow: var(--shadow);
     display: grid;
-    grid-template-rows: 1fr var(--toolbar-height);
+    /* 1行目: 初期記憶の進み具合（作成中・失敗時だけ出る）、2行目: 入力欄、3行目: ボタン */
+    grid-template-rows: auto 1fr var(--toolbar-height);
     overflow: hidden;
+}
+
+.input-panel > .memory-progress { grid-row: 1; }
+.input-panel > .chat-input { grid-row: 2; }
+.input-panel > .bottom-tools { grid-row: 3; }
+
+.memory-progress {
+    display: grid;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--panel-soft);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+}
+
+.memory-progress.hidden {
+    display: none;
+}
+
+.memory-progress-label {
+    color: var(--muted);
+}
+
+.memory-progress-track {
+    height: 6px;
+    background: #e3e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.memory-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #5b7fd6;
+    transition: width 0.4s ease;
+}
+
+.memory-progress.is-error {
+    background: #fdf0f0;
+}
+
+.memory-progress.is-error .memory-progress-label {
+    color: #d94a4a;
+    font-weight: 700;
+}
+
+.memory-progress.is-error .memory-progress-track {
+    display: none;
 }
 
 .chat-input {

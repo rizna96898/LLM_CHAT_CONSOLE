@@ -40,6 +40,7 @@ const API_PATHS = {
 
   SELECTED_SESSION: "/selected_session",
   SELECTED_MESSAGE: "/selected_message",
+  SESSION_STATUS: "/session_status",
   SESSION_IMAGE: "/session_image",
   CHAT_STARTUP: "/chat_startup",
   NEW_CHAT: "/new_chat",
