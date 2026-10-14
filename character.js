@@ -31,7 +31,8 @@ function createNewCharacter() {
     id: "new_character",
     name: "新しいキャラクター",
     tags: [],
-    setting: ""
+    setting: "",
+    isPending: true,    // まだ保存していない
     };
 }
 
@@ -228,11 +229,22 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     await renderEditorFromServer(selectedId);
 });
 
-document.getElementById("deleteButton").addEventListener("click", () => {
+document.getElementById("deleteButton").addEventListener("click", async () => {
     if (!selectedId) return;
-    charList = charList.filter(char => char.id !== selectedId);
+
+    const char = getSelectedCharacter();
+
+    // まだ保存していない新規は、一覧から外すだけ
+    if (char?.isPending) {
+        charList = charList.filter(c => c.id !== selectedId);
+    } else {
+        // ファイルごと消す。世界で使われていれば、サーバーが断る（世界名を通知に出す）
+        const deleted = await deleteSettingWithConfirm("character", selectedId, char?.name);
+        if (!deleted) return;
+        loadCharList();
+    }
+
     selectedId = null;
-    saveCharList();
     renderCharacterList();
     clearEditor();
 });

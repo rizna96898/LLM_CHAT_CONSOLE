@@ -90,22 +90,48 @@ function showToast(message, result) {
   const toast = document.createElement("div");
 
   toast.textContent = message;
-  toast.style.position = "fixed";
-  toast.style.top = "16px";
-  toast.style.right = "16px";
   toast.style.padding = "10px 16px";
-  toast.style.background = "#22c55e";
+  toast.style.maxWidth = "480px";
+  toast.style.overflowWrap = "anywhere";
+  // 種類で色を分ける（エラーは赤、案内は青、それ以外は緑）
+  const colors = {
+    [MESSAGE_TYPE.ERROR]: "#dc2626",
+    [MESSAGE_TYPE.INFO]: "#2563eb",
+  };
+  toast.style.background = colors[result] || "#22c55e";
   toast.style.color = "#fff";
   toast.style.borderRadius = "8px";
   toast.style.zIndex = "9999";
   toast.style.fontWeight = "700";
   toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
 
-  document.body.appendChild(toast);
+  // 同時に出ても重ならないよう、右上の置き場に縦に並べる
+  getToastContainer().appendChild(toast);
 
+  // エラーは文が長くなりがちなので、長めに出す
   setTimeout(() => {
     toast.remove();
-  }, 2500);
+  }, result === MESSAGE_TYPE.ERROR ? 5000 : 2500);
+}
+
+// 通知の置き場（右上）。無ければ作る。新しい通知ほど下に足される
+function getToastContainer() {
+  let container = document.getElementById("toastContainer");
+  if (container) return container;
+
+  container = document.createElement("div");
+  container.id = "toastContainer";
+  container.style.position = "fixed";
+  container.style.top = "16px";
+  container.style.right = "16px";
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.alignItems = "flex-end";
+  container.style.gap = "8px";
+  container.style.zIndex = "9999";
+  container.style.pointerEvents = "none";   // 通知の下の画面を押せるようにする
+  document.body.appendChild(container);
+  return container;
 }
 
 /**
@@ -139,6 +165,46 @@ async function refreshSettingsList(kind) {
 
   localStorage.setItem(storageKey, JSON.stringify(items));
   return items;
+}
+
+/**
+ * 世界・キャラクター・プレイヤーを、確認のうえファイルごと削除し、一覧を取り直す。
+ * キャラクター・プレイヤーは、使っている世界があるとサーバーが断る（その世界名が message に入る）。
+ *
+ * @param {"world"|"character"|"player"} kind
+ * @param {string} id
+ * @param {string} name 確認に出す名前
+ * @returns {Promise<boolean>} 削除したら true（取りやめ・失敗は false。失敗は通知を出す）
+ */
+async function deleteSettingWithConfirm(kind, id, name) {
+  const what = { world: "世界", character: "キャラクター", player: "プレイヤー" }[kind];
+  const files = kind === "world"
+    ? "世界設定のファイルが消えます（この世界のセッションは残ります）。"
+    : "設定のファイルと、アイコン・立ち絵の画像が消えます。";
+
+  if (!confirm(`${what}「${name || id}」（${id}）を削除します。\n${files}\n元に戻せません。よろしいですか？`)) {
+    return false;
+  }
+
+  try {
+    await postJson(API_PATHS.DELETE_SETTING, {
+      base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+      kind: kind,
+      id: id,
+    }, `${what}の削除に失敗しました`);
+  } catch (error) {
+    showToast(error.message || `${what}の削除に失敗しました`, MESSAGE_TYPE.ERROR);
+    return false;
+  }
+
+  showToast(`${what}「${name || id}」を削除しました`, MESSAGE_TYPE.SUCCESS);
+
+  try {
+    await refreshSettingsList(kind);
+  } catch (error) {
+    showToast(error.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+  }
+  return true;
 }
 
 function getStorageArray(key) {

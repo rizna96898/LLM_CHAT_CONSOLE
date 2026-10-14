@@ -238,7 +238,7 @@ function addWorld() {
   selectWorld(newId);
 }
 
-function deleteWorld() {
+async function deleteWorld() {
   const worldId = document
     .getElementById("worldIdInput")
     ?.value
@@ -248,17 +248,21 @@ function deleteWorld() {
     return;
   }
 
-  const worldList = loadWorldList();
-
-  const nextList = worldList.filter(
-    world => world.id !== worldId
-  );
-
-  saveWorldList(nextList);
+  // まだ保存していない新規は、一覧から外すだけ
+  if (pendingWorldList.some(world => world.id === worldId)) {
+    pendingWorldList = pendingWorldList.filter(world => world.id !== worldId);
+  } else {
+    // 世界設定のファイルを消す。この世界のセッションは残す
+    const world = loadWorldList().find(item => item.id === worldId);
+    const deleted = await deleteSettingWithConfirm("world", worldId, world?.name);
+    if (!deleted) return;
+  }
 
   renderWorldList();
 
   clearWorldForm();
+  clearWorldEditorContents();
+  clearParticipantTable();
 }
 
 async function loadWorldSettingsFromServer(worldId) {
