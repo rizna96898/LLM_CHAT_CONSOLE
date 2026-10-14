@@ -32,7 +32,8 @@ function createNewPlayer() {
         id: "new_player",
         name: "新しいプレイヤー",
         tags: [],
-        setting: ""
+        setting: "",
+        isPending: true,    // まだ保存していない
     };
 }
 
@@ -64,10 +65,15 @@ function renderPlayerList() {
             button.classList.add("active");
         }
 
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
             selectedId = player.id;
             renderPlayerList();
-            renderEditor(getSelectedPlayer());
+
+            if (player.isPending) {
+                renderEditor(player);
+            } else {
+                await renderEditorFromServer(player.id);
+            }
         });
 
         playerListBody.appendChild(button);
@@ -80,6 +86,42 @@ function renderEditor(player) {
     playerSettingInput.value = player.setting ?? "";
     renderTags(player.tags ?? []);
     loadPlayerImages(player.id ?? "");
+}
+
+// プレイヤー設定をファイルから読んで、編集欄に出す
+async function renderEditorFromServer(playerId) {
+    settingError.textContent = "";
+    if (!playerId) return;
+
+    const player = playerList.find(p => p.id === playerId) ?? { id: playerId };
+
+    try {
+        const baseChatPath = localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "";
+        const data = await postJson(API_PATHS.LOAD_PLAYER_SETTINGS, {
+            base_chat_path: baseChatPath,
+            player_id: playerId,
+        }, "プレイヤー設定の読み込みに失敗しました。");
+
+        renderEditor({
+            id: data.player_id ?? playerId,
+            name: data.player_name ?? "",
+            setting: data.player_info ?? "",
+            tags: player.tags ?? [],
+        });
+    } catch (error) {
+        renderEditor({ id: playerId, name: player.name ?? "", setting: "", tags: player.tags ?? [] });
+        settingError.textContent = error.message;
+    }
+}
+
+// 一覧をフォルダから取り直す。取れなければ、ブラウザに残っている一覧を使う
+async function reloadPlayerList() {
+    try {
+        await refreshSettingsList("player");
+    } catch (error) {
+        showToast(error.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+    }
+    loadplayerList();
 }
 
 function buildImageUrl(imageType, playerId) {
@@ -230,11 +272,10 @@ document.getElementById("saveButton").addEventListener("click", async () => {
     player.setting = saveSetting;
     selectedId = player.id;
 
-    saveplayerList();
-    loadplayerList();
+    await reloadPlayerList();
     selectedId = saveId;
     renderPlayerList();
-    renderEditor(getSelectedPlayer() ?? createNewPlayer());
+    await renderEditorFromServer(saveId);
 });
 
 document.getElementById("deleteButton").addEventListener("click", () => {
@@ -374,9 +415,12 @@ function clearEditor() {
     renderPlayerList();
 }
 
-function initPlayerPageForDisplay() {
+async function initPlayerPageForDisplay() {
     loadplayerList();
     clearEditor();
+
+    await reloadPlayerList();
+    renderPlayerList();
 }
 
 initPlayerPageForDisplay();

@@ -1204,7 +1204,14 @@ async function postReChat() {
     }
 }
 
-function openWorldSelectPopup() {
+async function openWorldSelectPopup() {
+    // 一覧はフォルダの中身から作る。取れなければ、ブラウザに残っている一覧を使う
+    try {
+        await refreshSettingsList("world");
+    } catch (error) {
+        showToast(error.message || "一覧の取得に失敗しました", MESSAGE_TYPE.ERROR);
+    }
+
     const worlds = getWorldList();
 
     worldSelectTableBody.innerHTML = "";

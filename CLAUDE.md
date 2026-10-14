@@ -40,7 +40,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 画面間の状態共有
 
-メイン画面とiframe内の子画面は、`localStorage` を介して状態を共有する。キーは `js/constant.js` の `STORAGE_KEYS` に定義する（選択中の世界・セッション、世界／キャラクター／プレイヤーの一覧、接続設定）。`session_list` と `selected_session_name` は `STORAGE_KEYS` を通さず文字列で直接使われている。
+メイン画面とiframe内の子画面は、`localStorage` を介して状態を共有する。キーは `js/constant.js` の `STORAGE_KEYS` に定義する（選択中の世界・セッション、世界／キャラクター／プレイヤーの一覧、接続設定）。一覧はフォルダの中身の写しで、画面を開いたときに `refreshSettingsList(kind)`（`js/common.js`、`/settings/list_settings` を呼ぶ）で取り直す。一覧を足す・消す処理は、ブラウザだけを書き換えず、サーバー（ファイル）側を変えてから取り直す。`session_list` と `selected_session_name` は `STORAGE_KEYS` を通さず文字列で直接使われている。
 
 子画面で保存した内容をメイン画面に反映するときは、iframeの `src` に `?reload=` を付けて読み直す（`reloadCharacterFrame`、`reloadWorldFrame`）。
 
