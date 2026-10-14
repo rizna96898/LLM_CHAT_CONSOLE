@@ -88,6 +88,10 @@
         <section class="parameter-strip">キャラパラメータ枠<br />喋ったキャラと連動 / 世界カードON/OFF指定</section>
 
         <section class="input-panel">
+          <div class="memory-progress hidden" id="memoryProgress" role="status" aria-live="polite">
+            <div class="memory-progress-label" id="memoryProgressLabel"></div>
+            <div class="memory-progress-track"><div class="memory-progress-bar" id="memoryProgressBar"></div></div>
+          </div>
           <textarea class="chat-input" placeholder="チャット入力枠"></textarea>
           <div class="bottom-tools">
             <button class="tool-button" type="button" id="newChatButton">新規チャット</button>
