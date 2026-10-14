@@ -1101,8 +1101,8 @@ async function postChat() {
         return;
     }
 
-    inputElement = document.querySelector(".chat-input")
-    message = inputElement.value;
+    const inputElement = document.querySelector(".chat-input")
+    const message = inputElement.value;
     // TODO 未入力の場合警告
     if (message !== "") {
         // ボタン名変更
@@ -1115,6 +1115,7 @@ async function postChat() {
             "ユーザ",
             message
         );
+        const userMessageElement = document.querySelector(".chat-log")?.lastElementChild;
 
         try {
 
@@ -1138,6 +1139,11 @@ async function postChat() {
         } catch (error) {
             console.error(error);
             showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+
+            // 失敗した発言は履歴に残らないので、画面からも消し、入力欄に戻す（待っている間に打った文は後ろに残す）
+            userMessageElement?.remove();
+            const typed = inputElement.value;
+            inputElement.value = typed ? `${message}\n${typed}` : message;
         } finally {
             if (chatButton) {
                 chatButton.disabled = memoryWatch.preparing;
@@ -1157,49 +1163,42 @@ async function postReChat() {
         return;
     }
 
-    const inputElements = document.querySelectorAll(".bubble_user");
-
+    // 再送は「返事の作り直し」。送り直す発言は、サーバーが履歴の最後のプレイヤーの発言から決める
     //TODO ユーザ主導のメッセージが無い時は警告出す
-    if (inputElements.length > 0) {
-        // ボタン名変更
-        changeButtonName(reChatButton);
+    // → サーバーが「送り直すプレイヤーの発言がありません」を返し、通知に出る
+    // ボタン名変更
+    changeButtonName(reChatButton);
 
-        const inputElement = inputElements[inputElements.length - 1];
-        const message = inputElement.querySelector(".message-text").innerText
-        
-        // playerの発言を先に反映
-        appendChatMessageByUser(
-            "100" || "",
-            "user",
-            "ユーザ",
-            message,
+    try {
+
+        const resultReChat = await postJson(API_PATHS.RE_CHAT, {
+            session_id: sessionId,
+        }, "再送に失敗しました");
+
+        console.log("返却内容", resultReChat);
+
+        // 作り直す前の返事の吹き出しを消す（畳まれた履歴の印は消さない）
+        const removed = new Set(resultReChat.removed_line_ids || []);
+        document.querySelectorAll(".chat-log .message .bubble").forEach(bubble => {
+            if (bubble.dataset.characterId !== "system" && removed.has(bubble.dataset.lineId)) {
+                bubble.closest(".message")?.remove();
+            }
+        });
+
+        appendChatMessage(
+            resultReChat.line_id || "",
+            resultReChat.icon_data.character_id,
+            resultReChat.icon_data.character_name,
+            resultReChat.message || "",
         );
 
-        try {
-
-            // 新規チャット（初期処理）
-            const resultReChat = await postJson(API_PATHS.RE_CHAT, {
-                session_id: sessionId,
-                message: message,
-            }, "再送に失敗しました");
-
-            console.log("返却内容", resultReChat);
-
-            appendChatMessage(
-                resultReChat.line_id || "",
-                resultReChat.icon_data.character_id,
-                resultReChat.icon_data.character_name,
-                resultReChat.message || "",
-            );
-
-        } catch (error) {
-            console.error(error);
-            showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
-        } finally {
-            if (reChatButton) {
-                reChatButton.disabled = memoryWatch.preparing;
-                reChatButton.textContent = "再送";
-            }
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
+    } finally {
+        if (reChatButton) {
+            reChatButton.disabled = memoryWatch.preparing;
+            reChatButton.textContent = "再送";
         }
     }
 }
