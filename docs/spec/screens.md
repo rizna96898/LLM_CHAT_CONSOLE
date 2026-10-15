@@ -313,7 +313,7 @@ LLM_CHAT_CONSOLE の各画面が、何を表示し、どこにデータを持ち
 | 「エクスプローラー」 | サーバー側のPCでフォルダ選択を開く（`/settings/select_base_path`） |
 | 「サーバー起動確認」 | `/health` |
 | 「SystemSettingsYamlを編集」 | サーバー側のPCで設定YAMLを開く（`/settings/open_system_yaml`） |
-| 「モデルロード」 | `/settings/load_model`（中身は作りかけ） |
+| 「モデルロード」 | `/settings/load_model`。`system_settings.yaml` のモデルを、モデルサーバーを再起動せずに読み直す。終わるまでボタンを止め、結果（読み込んだモデルの名前、または失敗の理由）を出す |
 | 「適用」 | 入力した3つを `localStorage` に保存する |
 
 - 2つのパスは、**サーバーを動かしているPCから見たパス**で入れる。

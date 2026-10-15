@@ -130,15 +130,17 @@ openSystemYamlButton.addEventListener("click", async () => {
 });
 
 loadModelButton.addEventListener("click", async () => {
-  setMessage(modelLoadMessage, "処理中...", MESSAGE_TYPE.INFO);
+  // 読み込みには時間がかかる（大きいモデルは数分）。終わるまでボタンを止める
+  setMessage(modelLoadMessage, "モデルを読み込み中...（大きいモデルは数分かかります）", MESSAGE_TYPE.INFO);
+  loadModelButton.disabled = true;
 
   try {
-    await requestJson(API_PATHS.LOAD_MODEL, {
+    const result = await requestJson(API_PATHS.LOAD_MODEL, {
       method: "POST",
       body: JSON.stringify({ base_path: basePathInput.value || "" }),
     });
 
-    setMessage(modelLoadMessage, "ロード完了", MESSAGE_TYPE.SUCCESS);
+    setMessage(modelLoadMessage, result.message || "ロード完了", MESSAGE_TYPE.SUCCESS);
   } catch (error) {
     if (!error.status) {
       handleServerDown();
@@ -147,6 +149,8 @@ loadModelButton.addEventListener("click", async () => {
     }
 
     setMessage(modelLoadMessage, error.message || "モデルロード失敗しました。", MESSAGE_TYPE.ERROR);
+  } finally {
+    loadModelButton.disabled = false;
   }
 });
 
