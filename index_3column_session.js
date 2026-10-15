@@ -42,7 +42,6 @@ const selectAllSessionsCheckbox =　document.getElementById("selectAllSessionsCh
 const deleteSelectedSessionsButton =　document.getElementById("deleteSelectedSessionsButton");
 const messageList = document.getElementById("messageList");
 const newChatButton = document.getElementById("newChatButton");
-const reChatButton = document.getElementById("reChatButton");
 const chatButton = document.getElementById("chatButton");
 const chatScrollTopButton = document.getElementById("chatScrollTopButton");
 const chatScrollBottomButton = document.getElementById("chatScrollBottomButton");
@@ -82,7 +81,6 @@ worldSelectButton.addEventListener("click", openWorldSelectPopup);
 closeWorldSelectPopup.addEventListener("click", closeWorldSelect);
 newChatButton.addEventListener("click", postNewChat);
 chatButton.addEventListener("click", postChat);
-reChatButton.addEventListener("click", postReChat);
 sessionList.addEventListener("click", selectSession);
 messageList.addEventListener("click", selectMessage);
 selectAllSessionsCheckbox.addEventListener("change", changeAllSessionSelections);
@@ -1156,53 +1154,6 @@ async function postChat() {
 
 }
 
-async function postReChat() {
-    const sessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
-    // チェック
-    if (!checkSessionId(sessionId)) {
-        return;
-    }
-
-    // 再送は「返事の作り直し」。送り直す発言は、サーバーが履歴の最後のプレイヤーの発言から決める
-    //TODO ユーザ主導のメッセージが無い時は警告出す
-    // → サーバーが「送り直すプレイヤーの発言がありません」を返し、通知に出る
-    // ボタン名変更
-    changeButtonName(reChatButton);
-
-    try {
-
-        const resultReChat = await postJson(API_PATHS.RE_CHAT, {
-            session_id: sessionId,
-        }, "再送に失敗しました");
-
-        console.log("返却内容", resultReChat);
-
-        // 作り直す前の返事の吹き出しを消す（畳まれた履歴の印は消さない）
-        const removed = new Set(resultReChat.removed_line_ids || []);
-        document.querySelectorAll(".chat-log .message .bubble").forEach(bubble => {
-            if (bubble.dataset.characterId !== "system" && removed.has(bubble.dataset.lineId)) {
-                bubble.closest(".message")?.remove();
-            }
-        });
-
-        appendChatMessage(
-            resultReChat.line_id || "",
-            resultReChat.icon_data.character_id,
-            resultReChat.icon_data.character_name,
-            resultReChat.message || "",
-        );
-
-    } catch (error) {
-        console.error(error);
-        showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
-    } finally {
-        if (reChatButton) {
-            reChatButton.disabled = memoryWatch.preparing;
-            reChatButton.textContent = "再送";
-        }
-    }
-}
-
 async function openWorldSelectPopup() {
     // 一覧はフォルダの中身から作る。取れなければ、ブラウザに残っている一覧を使う
     try {
@@ -1245,7 +1196,7 @@ function closeWorldSelect() {
 // ============================================================
 // 初期記憶の進み具合
 // 新規チャットのあと、サーバーは裏で初期記憶（世界の記憶とキャラクターの記憶）を作る。
-// 作っている間は発言・再送を止め、プログレスバーを出す。終われば（成否を問わず）ボタンを戻し、
+// 作っている間は発言を止め、プログレスバーを出す。終われば（成否を問わず）ボタンを戻し、
 // 失敗していたらその旨を出す。状態は /session_status で1秒ごとに問い合わせる。
 // ============================================================
 const MEMORY_POLL_INTERVAL_MS = 1000;
@@ -1254,14 +1205,14 @@ const MEMORY_STAGE_NAMES = { world: "世界の記憶", character: "キャラク�
 const memoryWatch = {
     sessionId: "",      // 見張っているセッション
     timer: null,
-    preparing: false,   // true の間は発言・再送を止める
+    preparing: false,   // true の間は発言を止める
     sawRunning: false,  // 作成中を一度でも見たか（終わったときに知らせるかどうか）
 };
 
 function setSendButtonsLocked(locked) {
     memoryWatch.preparing = locked;
 
-    for (const button of [chatButton, reChatButton]) {
+    for (const button of [chatButton]) {
         if (!button) continue;
         button.disabled = locked;
         button.title = locked ? "初期記憶を作成中です。終わるまでお待ちください" : "";
