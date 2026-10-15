@@ -55,7 +55,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. 世界を選ぶ → `/world_start`、`/load_session_list` でその世界のセッション一覧を出す
 2. 新規チャット → `/chat_startup`（サーバーがセッションを作り、このフォルダから設定をコピー）→ 返ってきた `session_id` で `/new_chat`（開始メッセージを受け取る）
-3. 発言 → `/chat`、再送 → `/re_chat`
+3. 発言 → `/chat`。失敗したら、自分の吹き出しを消して文章を入力欄に戻す（再送のボタンは無い）
 4. 既存セッションを選ぶ → `/selected_session` で履歴を読み込む。メッセージをクリック → `/selected_message`
 
 チャットの吹き出しは `js/constant.js` の `BASE_CHAT_OBJECT` / `BASE_CHAT_OBJECT_USER` をひな形にして組み立てる。チャット画面のアイコンと立ち絵は、`characters/` を直接読まず、`buildSessionImageUrl` で `/session_image/{セッションID}/{icon|standing}/{キャラクターID}` から読む。新規チャット時にサーバーがセッションフォルダへ退避した画像なので、後からキャラクター画面で画像を変えても進行中のチャットには影響しない。画像がない場合（プレイヤー、システムを含む）は名前の頭文字を表示する。

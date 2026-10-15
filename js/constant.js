@@ -45,7 +45,6 @@ const API_PATHS = {
   CHAT_STARTUP: "/chat_startup",
   NEW_CHAT: "/new_chat",
   CHAT: "/chat",
-  RE_CHAT: "/re_chat",
   WORLD_START: "/world_start",
   DELETE_SESSION: "/delete_session",
   LOAD_SESSION_LIST: "/load_session_list",
