@@ -119,11 +119,27 @@ window.addEventListener('message', (event) => {
  * @param {string} characterId キャラクターID
  * @returns {string} URL。セッション未選択などで作れない場合は空文字
  */
+// 選択中のセッションのプレイヤー（サーバーが /new_chat・/selected_session で返す）。発言した直後の吹き出しに使う
+let currentPlayer = { character_id: "", character_name: "" };
+
+function setCurrentPlayer(player) {
+    currentPlayer = {
+        character_id: (player && player.character_id) || "",
+        character_name: (player && player.character_name) || "",
+    };
+}
+
+// 履歴の1行がプレイヤーの発言か。サーバーが返す role で見分ける。古い履歴は role が無く、character_id が player
+function isPlayerMessage(messageObj) {
+    return messageObj.role === "player" || messageObj.icon_data.character_id === "player";
+}
+
 function buildSessionImageUrl(imageType, characterId) {
     const sessionId =
         localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
 
-    // プレイヤーとシステムは退避された画像を持たない
+    // システムと、古い履歴のプレイヤー（ID が player 固定だったころ）は、退避した画像を持たない。
+    // 今のプレイヤーは実際のプレイヤーIDなので、セッションに退避したアイコンを出す
     if (!sessionId || !characterId || characterId === "player" || characterId === "system") {
         return "";
     }
@@ -212,7 +228,7 @@ async function selectMessage(event) {
 
             for (const messageObj of messageList) {
                 console.log("要素", messageObj);
-                if (messageObj.icon_data.character_id === "player") {
+                if (isPlayerMessage(messageObj)) {
                     insertElement = insertChatMessageByUser(
                         insertElement,
                         messageObj.line_id || "",
@@ -292,10 +308,11 @@ async function selectSession(event) {
         console.log("返却内容", resultSession);
 
         clearChatLog();
+        setCurrentPlayer(resultSession.player);
         const messageList = resultSession.message_list;
         for (const messageObj of messageList) {
             console.log("要素", messageObj);
-            if (messageObj.icon_data.character_id === "player") {
+            if (isPlayerMessage(messageObj)) {
                 appendChatMessageByUser(
                     messageObj.line_id || "",
                     messageObj.icon_data.character_id || "",
@@ -1070,6 +1087,7 @@ async function postNewChat() {
         console.log("返却内容", resultNewChat);
 
         clearChatLog();
+        setCurrentPlayer(resultNewChat.player);
 
         appendChatMessage(
             resultNewChat.line_id || "",
@@ -1106,11 +1124,11 @@ async function postChat() {
         // ボタン名変更
         changeButtonName(chatButton);
 
-        // playerの発言を先に反映
+        // playerの発言を先に反映（行番号は、サーバーが返してから入れる）
         appendChatMessageByUser(
-            "100" || "",
-            "user",
-            "ユーザ",
+            "",
+            currentPlayer.character_id || "user",
+            currentPlayer.character_name || "ユーザ",
             message
         );
         const userMessageElement = document.querySelector(".chat-log")?.lastElementChild;
@@ -1126,6 +1144,11 @@ async function postChat() {
             }, "発言に失敗しました");
 
             console.log("返却内容", resultChat);
+
+            const userBubble = userMessageElement?.querySelector(".bubble_user");
+            if (userBubble && resultChat.player_line_id) {
+                userBubble.dataset.lineId = resultChat.player_line_id;
+            }
 
             appendChatMessage(
                 resultChat.line_id || "",
@@ -1320,6 +1343,7 @@ async function pollMemoryStatus(sessionId) {
 }
 
 function resetMainView() {
+    setCurrentPlayer(null);
     stopMemoryWatch();
     setSendButtonsLocked(false);
     showMemoryProgress("hidden");
