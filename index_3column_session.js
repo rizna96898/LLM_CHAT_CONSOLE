@@ -1165,6 +1165,11 @@ async function postChat() {
                 );
             }
 
+            // 裏でキャラクターの記憶を更新している。終わるまで発言を止め、進み具合を出す。
+            // 最初の問い合わせが返るまでの間も押せないよう、先に止めておく（更新中でなければ、問い合わせで戻る）
+            setSendButtonsLocked(true);
+            watchMemoryPreparation(sessionId);
+
         } catch (error) {
             console.error(error);
             showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
@@ -1227,11 +1232,26 @@ function closeWorldSelect() {
 // ============================================================
 // 初期記憶の進み具合
 // 新規チャットのあと、サーバーは裏で初期記憶（世界の記憶とキャラクターの記憶）を作る。
+// 発言のあとも、裏でキャラクターの記憶を更新する（after）。どちらも、
 // 作っている間は発言を止め、プログレスバーを出す。終われば（成否を問わず）ボタンを戻し、
 // 失敗していたらその旨を出す。状態は /session_status で1秒ごとに問い合わせる。
 // ============================================================
 const MEMORY_POLL_INTERVAL_MS = 1000;
 const MEMORY_STAGE_NAMES = { world: "世界の記憶", character: "キャラクターの記憶" };
+
+// 見張る裏の処理。new_chat は新規チャットの初期記憶、after は発言のあとの記憶の更新
+const MEMORY_WATCH_STAGES = {
+    new_chat: {
+        running: "初期記憶を作成中",
+        failed: (stage) => `初期記憶の作成に失敗しました（${stage}）。新規チャットを押し直してください。`,
+        done: "初期記憶ができました",
+    },
+    after: {
+        running: "記憶を更新中",
+        failed: (stage) => `記憶の更新に失敗しました（${stage}）。記憶は前のままです。`,
+        done: "",   // 発言のたびに出るので、終わったときの通知は出さない
+    },
+};
 
 const memoryWatch = {
     sessionId: "",      // 見張っているセッション
@@ -1313,18 +1333,18 @@ async function pollMemoryStatus(sessionId) {
 
     if (memoryWatch.sessionId !== sessionId) return;
 
-    const isNewChat = result.complete_stage === "new_chat";
+    const watched = MEMORY_WATCH_STAGES[result.complete_stage];
     const progress = result.progress || {};
 
-    // 作成中
-    if (isNewChat && result.status === "processing") {
+    // 作成中・更新中
+    if (watched && result.status === "processing") {
         memoryWatch.sawRunning = true;
         setSendButtonsLocked(true);
 
         const total = Number(progress.total) || 0;
         const done = Math.min(Number(progress.done) || 0, total);
         const step = total > 0 ? `（${done}/${total}）` : "";
-        showMemoryProgress("running", `初期記憶を作成中: ${progress.label || "準備中"} ${step}`, done, total);
+        showMemoryProgress("running", `${watched.running}: ${progress.label || "準備中"} ${step}`, done, total);
 
         memoryWatch.timer = setTimeout(() => pollMemoryStatus(sessionId), MEMORY_POLL_INTERVAL_MS);
         return;
@@ -1333,17 +1353,17 @@ async function pollMemoryStatus(sessionId) {
     // 終わった（成否は問わずボタンは戻す）
     setSendButtonsLocked(false);
 
-    if (isNewChat && result.status === "error") {
-        const stage = MEMORY_STAGE_NAMES[result.error_stage] || "初期記憶";
-        const text = `初期記憶の作成に失敗しました（${stage}）。新規チャットを押し直してください。`;
+    if (watched && result.status === "error") {
+        const stage = MEMORY_STAGE_NAMES[result.error_stage] || "記憶";
+        const text = watched.failed(stage);
         showMemoryProgress("error", text, 0, 0, result.error_message || "");
         if (memoryWatch.sawRunning) {
             showToast(text, MESSAGE_TYPE.ERROR);
         }
     } else {
         showMemoryProgress("hidden");
-        if (memoryWatch.sawRunning) {
-            showToast("初期記憶ができました", MESSAGE_TYPE.SUCCESS);
+        if (memoryWatch.sawRunning && watched && watched.done) {
+            showToast(watched.done, MESSAGE_TYPE.SUCCESS);
         }
     }
 
