@@ -1170,6 +1170,12 @@ async function postChat() {
             setSendButtonsLocked(true);
             watchMemoryPreparation(sessionId);
 
+            // セッション一覧の「更新」日時を、サーバーが書いた日時にする
+            if (resultChat.updated_at) {
+                upsertSessionList({ session_id: sessionId, updated_at: resultChat.updated_at });
+                renderSessionList(getSessionList(), sessionId);
+            }
+
         } catch (error) {
             console.error(error);
             showToast(error.message || "エラー発生", MESSAGE_TYPE.ERROR);
