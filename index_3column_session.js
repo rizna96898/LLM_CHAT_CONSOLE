@@ -1150,12 +1150,20 @@ async function postChat() {
                 userBubble.dataset.lineId = resultChat.player_line_id;
             }
 
-            appendChatMessage(
-                resultChat.line_id || "",
-                resultChat.icon_data.character_id,
-                resultChat.icon_data.character_name,
-                resultChat.message || "",
-            );
+            // 返事と、あれば掛け合い（キャラクター同士の1往復）を、順に吹き出しにする。
+            // messages が無い古いサーバーなら、今までどおり返事1件だけ
+            const replies = Array.isArray(resultChat.messages) && resultChat.messages.length > 0
+                ? resultChat.messages
+                : [resultChat];
+
+            for (const reply of replies) {
+                appendChatMessage(
+                    reply.line_id || "",
+                    reply.icon_data.character_id,
+                    reply.icon_data.character_name,
+                    reply.message || "",
+                );
+            }
 
         } catch (error) {
             console.error(error);
