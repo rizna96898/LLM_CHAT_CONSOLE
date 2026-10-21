@@ -33,6 +33,11 @@ const STORAGE_KEYS = {
   SELECTED_WORLD_ID: "selected_world_id",
   SELECTED_WORLD_NAME: "selected_world_name",
   SELECTED_SESSION_ID: "selected_session_id",
+  SELECTED_SESSION_NAME: "selected_session_name",
+  SESSION_LIST: "session_list",
+
+  // 世界カードで編集中の世界（メイン画面で遊ぶ世界 SELECTED_WORLD_ID とは別に持つ）
+  EDIT_WORLD_ID: "edit_world_id",
 };
 
 const API_PATHS = {

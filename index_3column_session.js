@@ -101,7 +101,19 @@ function scrollChat(scrollLine) {
     chatLog.scrollTop = line;
 }
 window.addEventListener('message', (event) => {
-    if (!event.data || event.data.type !== 'settings_applied') return;
+    if (!event.data) return;
+
+    // 世界カードで保存・削除した（notifyMainPage）。遊んでいる世界なら、表示を合わせる
+    if (event.data.type === 'world_saved') {
+        applySavedWorld(event.data.world_id, event.data.world_name);
+        return;
+    }
+    if (event.data.type === 'world_deleted') {
+        applyDeletedWorld(event.data.world_id);
+        return;
+    }
+
+    if (event.data.type !== 'settings_applied') return;
     const title = document.getElementById('settingsTitle');
     if (!title) return;
     const original = title.textContent;
@@ -289,7 +301,11 @@ async function selectSession(event) {
     const row = event.target.closest(".session-row");
     if (!row) return;
 
-    const sessionId = row.dataset.sessionId;
+    await loadSession(row.dataset.sessionId);
+}
+
+// セッションの履歴を読み込んで、チャット欄に出す（一覧で選んだとき、開き直して前回のセッションを戻すとき）
+async function loadSession(sessionId) {
 
     const worldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
     
@@ -391,14 +407,14 @@ function getWorldList() {
 
 function getSessionList() {
     try {
-        return JSON.parse(localStorage.getItem("session_list") || "[]");
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION_LIST) || "[]");
     } catch {
         return [];
     }
 }
 
 function saveSessionList(sessions) {
-    localStorage.setItem("session_list", JSON.stringify(Array.isArray(sessions) ? sessions : []));
+    localStorage.setItem(STORAGE_KEYS.SESSION_LIST, JSON.stringify(Array.isArray(sessions) ? sessions : []));
 }
 
 function upsertSessionList(session) {
@@ -425,6 +441,31 @@ function updateSummaryWorld() {
     scenario.textContent = "選択中世界: " + (selectedWorldName || "未選択");
 }
 
+// 世界カードで保存された世界が、遊んでいる世界なら、世界名の表示を直す
+function applySavedWorld(worldId, worldName) {
+    if (!worldId || worldId !== localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID)) return;
+    if (!worldName) return;
+
+    localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_NAME, worldName);
+    updateSummaryWorld();
+}
+
+// 世界カードで消された世界が、遊んでいる世界なら、選択を外す（セッションはサーバーに残る）
+function applyDeletedWorld(worldId) {
+    if (!worldId || worldId !== localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID)) return;
+
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_WORLD_ID);
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_WORLD_NAME);
+    clearSelectedSession();
+
+    resetMainView();
+    updateSummaryWorld();
+    saveSessionList([]);
+    clearSessionList();
+
+    showToast("遊んでいた世界が削除されたので、選択を外しました。\n世界を選び直してください。", MESSAGE_TYPE.INFO);
+}
+
 function applySelectedSession(session) {
     if (!session) return;
 
@@ -439,7 +480,7 @@ function applySelectedSession(session) {
         localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_ID, sessionId);
     }
 
-    localStorage.setItem("selected_session_name", sessionName);
+    localStorage.setItem(STORAGE_KEYS.SELECTED_SESSION_NAME, sessionName);
 
     // 世界ID/世界名は「世界選択」で管理する。
     // セッション選択・新規チャットでは上書きしない。
@@ -692,7 +733,7 @@ async function deleteSelectedSessions() {
             );
 
             localStorage.removeItem(
-                "selected_session_name"
+                STORAGE_KEYS.SELECTED_SESSION_NAME
             );
 
             resetMainView();
@@ -865,7 +906,7 @@ function renderSessionList(
             );
 
             localStorage.setItem(
-                "selected_session_name",
+                STORAGE_KEYS.SELECTED_SESSION_NAME,
                 displayName
             );
 
@@ -975,7 +1016,7 @@ async function startSessionByWorld(world) {
     localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, worldId);
     localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_NAME, worldName);
     localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_ID);
-    localStorage.removeItem("selected_session_name");
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_NAME);
 
     updateSummaryWorld();
 
@@ -1618,6 +1659,7 @@ async function initializeMainViewFromLocalStorage() {
     // 世界選択をしていない場合は、サーバーへ問い合わせない。
     if (!selectedWorldId) {
         saveSessionList([]);
+        clearSelectedSession();
         return;
     }
 
@@ -1635,14 +1677,31 @@ async function initializeMainViewFromLocalStorage() {
 
     saveSessionList(sessions);
 
-    // 初期選択はしないので、第2引数は空文字にする。
-    renderSessionList(sessions, "");
+    // 前回開いていたセッションが、この世界の一覧にあれば、開き直す。無ければ選択を外す
+    // （選択だけ残っていると、チャット欄が空のまま発言したときに、前回のセッションへ送られてしまう）
+    const savedSessionId =
+        localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+
+    if (savedSessionId && sessions.some(session => session.session_id === savedSessionId)) {
+        renderSessionList(sessions, savedSessionId);
+        await loadSession(savedSessionId);
+    } else {
+        clearSelectedSession();
+        renderSessionList(sessions, "");
+    }
 
     } catch (error) {
         console.error(error);
         saveSessionList([]);
         clearSessionList();
+        clearSelectedSession();
     }
+}
+
+// 選択中のセッションを外す（ブラウザに保存した選択も消す）
+function clearSelectedSession() {
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_ID);
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_NAME);
 }
 
 async function checkServerHealth() {

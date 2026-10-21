@@ -207,6 +207,19 @@ async function deleteSettingWithConfirm(kind, id, name) {
   return true;
 }
 
+/**
+ * 子画面（世界カードなど）から、メイン画面へ知らせる。
+ * iframe なら親の画面へ、「別窓」で開いたなら開いた元の画面へ送る。単独で開いたときは何もしない。
+ *
+ * @param {{type: string}} message 例: { type: "world_saved", world_id, world_name }
+ */
+function notifyMainPage(message) {
+  const target = window.parent !== window ? window.parent : window.opener;
+  if (target) {
+    target.postMessage(message, "*");
+  }
+}
+
 function getStorageArray(key) {
   try {
     const raw = localStorage.getItem(key);

@@ -40,9 +40,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 画面間の状態共有
 
-メイン画面とiframe内の子画面は、`localStorage` を介して状態を共有する。キーは `js/constant.js` の `STORAGE_KEYS` に定義する（選択中の世界・セッション、世界／キャラクター／プレイヤーの一覧、接続設定）。一覧はフォルダの中身の写しで、画面を開いたときに `refreshSettingsList(kind)`（`js/common.js`、`/settings/list_settings` を呼ぶ）で取り直す。一覧を足す・消す処理は、ブラウザだけを書き換えず、サーバー（ファイル）側を変えてから取り直す。`session_list` と `selected_session_name` は `STORAGE_KEYS` を通さず文字列で直接使われている。
+メイン画面とiframe内の子画面は、`localStorage` を介して状態を共有する。キーは `js/constant.js` の `STORAGE_KEYS` に定義する（遊ぶ世界・セッション、世界カードで編集中の世界、世界／キャラクター／プレイヤーの一覧、接続設定）。一覧はフォルダの中身の写しで、画面を開いたときに `refreshSettingsList(kind)`（`js/common.js`、`/settings/list_settings` を呼ぶ）で取り直す。一覧を足す・消す処理は、ブラウザだけを書き換えず、サーバー（ファイル）側を変えてから取り直す。キーを文字列で直接書かない。
 
-子画面で保存した内容をメイン画面に反映するときは、iframeの `src` に `?reload=` を付けて読み直す（`reloadCharacterFrame`、`reloadWorldFrame`）。
+子画面で保存した内容をメイン画面に反映するときは、iframeの `src` に `?reload=` を付けて読み直す（`reloadCharacterFrame`、`reloadWorldFrame`）。世界カードで保存・削除したときは、`notifyMainPage`（`js/common.js`）でメイン画面に知らせ（`world_saved` / `world_deleted`）、メイン画面は遊んでいる世界なら表示を合わせる。世界カードで選んだ世界（`edit_world_id`）と、メイン画面で遊ぶ世界（`selected_world_id`）は別に持つ。
 
 ### サーバー呼び出し
 
