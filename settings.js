@@ -141,6 +141,16 @@ loadModelButton.addEventListener("click", async () => {
     });
 
     setMessage(modelLoadMessage, result.message || "ロード完了", MESSAGE_TYPE.SUCCESS);
+
+    // メイン画面の「使用モデル」を新しい名前にしてもらう
+    if (result.model_name) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.MODEL_NAME, result.model_name);
+      } catch {
+        // 保存できなくても、知らせは送る
+      }
+      notifyMainPage({ type: "model_loaded", model_name: result.model_name });
+    }
   } catch (error) {
     if (!error.status) {
       handleServerDown();

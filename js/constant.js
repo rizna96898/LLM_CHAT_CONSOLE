@@ -36,6 +36,9 @@ const STORAGE_KEYS = {
   SELECTED_SESSION_NAME: "selected_session_name",
   SESSION_LIST: "session_list",
 
+  // 最後に確かめた、モデルサーバーが読み込み中のモデル（/health・モデルロードで取る）
+  MODEL_NAME: "model_name",
+
   // ボタンの上の説明文字を出すか（"off" なら消す）
   BUTTON_LABELS: "button_labels",
 

@@ -130,6 +130,11 @@ window.addEventListener('message', (event) => {
         applyDeletedWorld(event.data.world_id);
         return;
     }
+    // 設定画面でモデルを読み直した。「使用モデル」を新しい名前にする
+    if (event.data.type === 'model_loaded') {
+        rememberModelName(event.data.model_name);
+        return;
+    }
 
     if (event.data.type !== 'settings_applied') return;
     const title = document.getElementById('settingsTitle');
@@ -1453,8 +1458,6 @@ function resetMainView() {
         document.querySelector("#summaryServer");
     const serverStatus =
         document.querySelector("#summaryServerStatus");
-    const llm =
-        document.querySelector("#summaryLlm");
     const summaryImage =
         document.querySelector("#summaryImage");
     const summaryImageStatus =
@@ -1499,10 +1502,8 @@ function resetMainView() {
         serverStatus.innerHTML = "－確認待ち";
     }
 
-    if (llm) {
-        llm.innerHTML =
-            "使用モデル: Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf";
-    }
+    // 使用モデルは、最後に確かめた名前を出しておく（接続確認で取り直す）
+    showModelName(localStorage.getItem(STORAGE_KEYS.MODEL_NAME) || "");
 
     if (summaryImage) {
         summaryImage.innerHTML = "画像作成中: ";
@@ -1722,6 +1723,24 @@ function clearSelectedSession() {
     localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_NAME);
 }
 
+// 上部の「使用モデル」を出す。note はモデル名のうしろに付ける補足（未接続など）
+function showModelName(modelName, note = "") {
+    const llm = document.querySelector("#summaryLlm");
+    if (!llm) return;
+    llm.textContent = "使用モデル: " + (modelName || "未確認") + note;
+}
+
+// 読み込み中のモデルを覚えて出す（接続確認・モデルロードで取れたとき）
+function rememberModelName(modelName) {
+    if (!modelName) return;
+    try {
+        localStorage.setItem(STORAGE_KEYS.MODEL_NAME, modelName);
+    } catch {
+        // 保存できなくても、表示はする
+    }
+    showModelName(modelName);
+}
+
 async function checkServerHealth() {
 
     summaryServerStatus.textContent = "確認中...";
@@ -1729,11 +1748,21 @@ async function checkServerHealth() {
 
     try {
         // 正常（status: ok）なら接続中。それ以外は例外になり、下の catch で振り分ける
-        await requestJson(API_PATHS.HEALTH, { method: "GET" });
+        const result = await requestJson(API_PATHS.HEALTH, { method: "GET" });
 
         summaryServerStatus.textContent = "●接続中";
         summaryServerStatus.className = "status-ok";
         summaryServerStatus.title = "";
+
+        // 読み込み中のモデル。モデルサーバーが止まっている・読み込めていないときは、前に確かめた名前に補足を付ける
+        const remembered = localStorage.getItem(STORAGE_KEYS.MODEL_NAME) || "";
+        if (result.model_server === "ok" && result.model_loaded && result.model_name) {
+            rememberModelName(result.model_name);
+        } else if (result.model_server === "ok") {
+            showModelName(remembered, "（モデルが読み込まれていません）");
+        } else if (result.model_server === "ng") {
+            showModelName(remembered, "（モデルサーバー未接続）");
+        }
 
     } catch (error) {
         console.error(error);
