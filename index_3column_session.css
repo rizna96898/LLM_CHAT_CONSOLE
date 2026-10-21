@@ -236,6 +236,12 @@ button, select, input, textarea { font: inherit; }
     line-height: 1.1;
 }
 
+/* ラベル OFF のとき、ボタンの上の説明文字（上のメニューの項目名、右の「世界選択」の見出し）を消す */
+.app.labels-hidden .top-control > span,
+.app.labels-hidden .setting-field > label:has(+ button) {
+    display: none;
+}
+
 .top-control select,
 .top-control button {
     height: 24px;

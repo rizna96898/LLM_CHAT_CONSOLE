@@ -75,6 +75,24 @@ closeTagManagerFooter.addEventListener('click', () => setOverlay(false, tagManag
 summaryCheck.addEventListener("click", checkServerHealth);
 
 /**
+ * ラベル ON/OFF: ボタンの上の説明文字を出す・消す。選んだ状態はブラウザに覚えておく
+ */
+const labelToggleButton = document.getElementById("labelToggleButton");
+
+function applyButtonLabels(show) {
+    app.classList.toggle("labels-hidden", !show);
+    labelToggleButton.textContent = show ? "ON" : "OFF";
+    try {
+        localStorage.setItem(STORAGE_KEYS.BUTTON_LABELS, show ? "on" : "off");
+    } catch {
+        // 保存できなくても、表示の切り替えはする
+    }
+}
+
+labelToggleButton.addEventListener("click", () => applyButtonLabels(app.classList.contains("labels-hidden")));
+applyButtonLabels(localStorage.getItem(STORAGE_KEYS.BUTTON_LABELS) !== "off");
+
+/**
  * 画面上のボタンイベント登録
  */
 worldSelectButton.addEventListener("click", openWorldSelectPopup);

@@ -10,8 +10,7 @@
   <div id="topMessage" class="top-message"></div>
   <div class="app" id="app">
     <header class="topbar collapsed" id="topbar">
-      <div class="top-control"><span>言語選択</span><select><option>日本語</option><option>English</option></select></div>
-      <div class="top-control"><span>ラベル ON/OFF</span><button type="button">ON</button></div>
+      <div class="top-control"><span>ラベル ON/OFF</span><button type="button" id="labelToggleButton">ON</button></div>
       <div class="top-control"><span>画面レイアウト</span><button type="button" id="layoutToggleTop">切替</button></div>
       <div class="top-control"><span>接続環境設定</span><button type="button" id="settingsToggleButton">設定</button></div>
       <div class="top-control"><span>プレイヤー設定</span><button type="button" id="playerToggleButton">プレイヤー設定</button></div>
@@ -165,7 +164,7 @@
 
             <div class="settings-model-pane">
               <div class="settings-pane-title">
-                <strong>世界・モデル設定</strong>
+                <strong>世界設定</strong>
               </div>
 
               <div class="settings-form">
@@ -174,10 +173,6 @@
                     世界選択
                   </button>
                 </div>
-                <div class="setting-field"><label>temperature</label><input type="text" value="0.8" class="mini-input" /></div>
-                <div class="setting-field"><label>max_tokens</label><input type="text" value="300" class="mini-input" /></div>
-                <div class="setting-field"><label>画像生成</label><label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                <div class="setting-field"><label>OpenRouter補助</label><label class="toggle-switch"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
               </div>
             </div>
           </div>

@@ -36,6 +36,9 @@ const STORAGE_KEYS = {
   SELECTED_SESSION_NAME: "selected_session_name",
   SESSION_LIST: "session_list",
 
+  // ボタンの上の説明文字を出すか（"off" なら消す）
+  BUTTON_LABELS: "button_labels",
+
   // 世界カードで編集中の世界（メイン画面で遊ぶ世界 SELECTED_WORLD_ID とは別に持つ）
   EDIT_WORLD_ID: "edit_world_id",
 };
