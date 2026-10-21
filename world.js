@@ -94,7 +94,7 @@ async function saveWorldSetting() {
   }
 
   const worldList = getWorldList();
-  const currentSelectedWorldId = localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID) || "";
+  const currentSelectedWorldId = localStorage.getItem(STORAGE_KEYS.EDIT_WORLD_ID) || "";
 
   const existsOther = worldList.some(world =>
     world.id === worldId && world.id !== currentSelectedWorldId
@@ -186,7 +186,10 @@ async function saveWorldSetting() {
     upsertWorldList(worldId, worldName);
     renderWorldList();
 
-    localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, worldId);
+    localStorage.setItem(STORAGE_KEYS.EDIT_WORLD_ID, worldId);
+
+    // メイン画面で遊んでいる世界なら、世界名の表示を直してもらう
+    notifyMainPage({ type: "world_saved", world_id: worldId, world_name: worldName });
   } catch (error) {
     showToast(error.message || "世界設定の保存に失敗しました。", MESSAGE_TYPE.ERROR);
   }
@@ -256,8 +259,12 @@ async function deleteWorld() {
     const world = loadWorldList().find(item => item.id === worldId);
     const deleted = await deleteSettingWithConfirm("world", worldId, world?.name);
     if (!deleted) return;
+
+    // メイン画面で遊んでいる世界なら、選択を外してもらう
+    notifyMainPage({ type: "world_deleted", world_id: worldId });
   }
 
+  localStorage.removeItem(STORAGE_KEYS.EDIT_WORLD_ID);
   renderWorldList();
 
   clearWorldForm();
@@ -346,7 +353,7 @@ async function selectWorld(worldId) {
   document.getElementById("worldIdInput").value = world.id || "";
   document.getElementById("worldNameInput").value = world.name || "";
 
-  localStorage.setItem(STORAGE_KEYS.SELECTED_WORLD_ID, world.id || "");
+  localStorage.setItem(STORAGE_KEYS.EDIT_WORLD_ID, world.id || "");
 
   renderWorldList();
 
@@ -456,7 +463,7 @@ function renderWorldList() {
       button.classList.add("pending-item");
     }
 
-    if (world.id === localStorage.getItem(STORAGE_KEYS.SELECTED_WORLD_ID)) {
+    if (world.id === localStorage.getItem(STORAGE_KEYS.EDIT_WORLD_ID)) {
       button.classList.add("active");
     }
 
