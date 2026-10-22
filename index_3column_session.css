@@ -521,6 +521,88 @@ button, select, input, textarea { font: inherit; }
     clip-path: inset(0 round 14px);
 }
 
+/* 持ち物。立ち絵のパネル全体に重ねる */
+.standee-area .panel { position: relative; }
+
+.items-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    background: var(--panel);
+}
+
+.items-overlay.hidden { display: none; }
+
+.items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.items-people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.items-person {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-soft);
+    cursor: pointer;
+}
+
+.items-person:hover { border-color: var(--accent); }
+
+.items-person.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+}
+
+.items-body {
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 16px;
+    line-height: 1.7;
+}
+
+.items-body h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+}
+
+.items-list {
+    margin: 0 0 12px;
+    padding-left: 20px;
+}
+
+.item-link {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.items-empty,
+.items-money { color: var(--muted); }
+
+/* 持ち物の中身のページ（今は白紙。契約書・履歴書などの中身は、あとで入れる） */
+.item-sheet {
+    min-height: 60%;
+    margin-top: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+}
+
 /* 返信生成結果画像の初期表示枠 */
 .image-box {
     width: min(92%, 680px);
