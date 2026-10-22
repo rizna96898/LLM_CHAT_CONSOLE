@@ -2,22 +2,22 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>キャラクターカードUI</title>
-  <link rel="stylesheet" href="./player.css">
+  <title>キャラクターカード</title>
+  <link rel="stylesheet" href="./person_card.css">
 </head>
 <body>
-  <div class="player-page">
-
-    <aside class="player-list">
+  <!-- キャラクターカードとプレイヤー設定の共通画面。?kind=player でプレイヤー用になる（文言と呼ぶAPIは person_card.js の CARD_KINDS） -->
+  <div class="card-page">
+    <aside class="card-list">
       <div class="list-head">
-        <span>キャラリスト</span>
-        <button id="addPlayerButton">追加</button>
+        <span id="listTitle"></span>
+        <button id="addCardButton">追加</button>
       </div>
-      <div id="playerListBody"></div>
+      <div id="cardListBody"></div>
     </aside>
 
-    <main class="player-main">
-      <header class="player-title">
+    <main class="card-main">
+      <header class="card-title">
         <div class="title-icon-area">
           <div class="icon-preview" id="iconPreview">
             <span class="placeholder">アイコン画像</span>
@@ -29,15 +29,15 @@
 
         <div class="title-stack">
           <label>
-            <span class="form-label">キャラクターID</span>
-            <input id="playerIdInput" type="text">
+            <span class="form-label" id="idLabel"></span>
+            <input id="idInput" type="text">
             <span>リストの表示順や処理で使用します。</span>
             <span id="idError" class="error-message"></span>
           </label>
 
           <label>
-            <span class="form-label">キャラクター名</span>
-            <input id="playerNameInput" type="text">
+            <span class="form-label" id="nameLabel"></span>
+            <input id="nameInput" type="text">
             <span>ここの名前でチャットを行います。</span>
             <span id="nameError" class="error-message"></span>
           </label>
@@ -51,13 +51,14 @@
         </div>
       </header>
 
-      <section class="player-grid">
+      <section class="card-grid">
         <div class="image-box standee-box">
           <div class="box-header">
             <span class="form-label">立ち絵</span>
             <button type="button" id="standingSelectButton">設定</button>
             <input type="file" id="standingFileInput" accept="image/*" hidden>
           </div>
+
           <div class="standee-preview" id="standingPreview">
             <span class="placeholder">立ち絵画像</span>
             <img id="standingImg">
@@ -66,23 +67,49 @@
 
         <div class="settings-box">
           <div class="box-header">
-            <span class="form-label">キャラクター設定</span>
+            <span class="form-label" id="settingLabel"></span>
             <button id="initializeButton">初期化</button>
             <span id="settingError" class="error-message"></span>
           </div>
-          <textarea id="playerSettingInput"></textarea>
+          <textarea class="card-textarea" id="settingInput"></textarea>
         </div>
       </section>
 
-      <footer class="player-footer">
+      <footer class="card-footer">
         <button id="deleteButton">削除</button>
         <button id="saveButton">登録／更新</button>
       </footer>
-
     </main>
+  </div>
+
+  <div id="iconCropOverlay" class="crop-overlay hidden">
+    <div class="crop-window">
+      <div class="crop-header">
+        <strong>アイコン範囲指定</strong>
+        <button type="button" id="iconCropCancelTop">×</button>
+      </div>
+      <div class="crop-body">
+        <div class="crop-stage" id="iconCropStage">
+          <img id="iconCropImage" alt="">
+          <div class="crop-mask"></div>
+          <div class="crop-frame"></div>
+        </div>
+        <div class="crop-controls">
+          <label>
+            拡大
+            <input type="range" id="iconCropZoom" min="1" max="3" step="0.01" value="1">
+          </label>
+          <span>画像をドラッグして位置調整できます。</span>
+        </div>
+      </div>
+      <div class="crop-footer">
+        <button type="button" id="iconCropCancel">キャンセル</button>
+        <button type="button" id="iconCropApply">OK</button>
+      </div>
+    </div>
   </div>
   <script src="js/constant.js"></script>
   <script src="js/common.js"></script>
-  <script src="player.js"></script>
+  <script src="person_card.js"></script>
 </body>
 </html>
