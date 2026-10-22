@@ -48,9 +48,9 @@ const chatScrollBottomButton = document.getElementById("chatScrollBottomButton")
 
 // メイン上部のボタン登録
 openWorldWindow.addEventListener('click', function () {openWindowPage('world.html', 'worldCard')});
-openCharacterWindow.addEventListener('click', function () {openWindowPage('character.html', 'characterCard')});
+openCharacterWindow.addEventListener('click', function () {openWindowPage('person_card.html?kind=character', 'characterCard')});
 openSettingsWindow.addEventListener('click', function () {openWindowPage('settings.html', 'settingsWindow')});
-openPlayerWindow.addEventListener('click', function () {openWindowPage('player.html', 'playerWindow')});
+openPlayerWindow.addEventListener('click', function () {openWindowPage('person_card.html?kind=player', 'playerWindow')});
 
 tagManageButton.addEventListener('click', () => setOverlay(tagManagerWindow.classList.contains('hidden'), tagManagerWindow, 'tag-manager-open'));
 toggleTop.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
@@ -406,7 +406,7 @@ function setOverlay(open, overlay, className) {
 
 function reloadCharacterFrame() {
     if (!characterFrame) return;
-    characterFrame.src = `character.html?reload=${Date.now()}`;
+    characterFrame.src = `person_card.html?kind=character&reload=${Date.now()}`;
 }
 
 function reloadWorldFrame() {

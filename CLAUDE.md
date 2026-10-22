@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 画面
 
 - `index_3column_session.html` / `.js` / `.css` が現行のメイン画面（チャット、セッション一覧、世界選択）。
-- `world.html`、`character.html`、`player.html`、`settings.html` は単独でも開ける子画面で、メイン画面にはiframeのオーバーレイとして埋め込まれている。「別窓」ボタンで別ウィンドウにも開ける。
+- `world.html`、`person_card.html`（`?kind=character` でキャラクターカード、`?kind=player` でプレイヤー設定。同じ画面を文言とAPIだけ切り替えて使う）、`settings.html` は単独でも開ける子画面で、メイン画面にはiframeのオーバーレイとして埋め込まれている。「別窓」ボタンで別ウィンドウにも開ける。
 
 各HTMLは `js/constant.js` → `js/common.js` → 画面ごとのJS の順に `<script>` で読み込む。モジュールではなく全部グローバルなので、共通の定数・関数はこの2ファイルに置き、読み込み順を保つ。
 
