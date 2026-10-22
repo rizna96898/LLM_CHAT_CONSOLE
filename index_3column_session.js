@@ -347,6 +347,7 @@ async function loadSession(sessionId) {
         console.log("返却内容", resultSession);
 
         clearChatLog();
+        closeItemsOverlay();    // 前のセッションの持ち物を出したままにしない
         setCurrentPlayer(resultSession.player);
         const messageList = resultSession.message_list;
         for (const messageObj of messageList) {
@@ -1300,6 +1301,124 @@ function closeWorldSelect() {
 }
 
 // ============================================================
+// 持ち物
+// 「持ち物」を押すと、立ち絵の上に重ねて開く。上の段にセッションのメインキャラクター全員を並べ、
+// 押した人の持ち物（所持品と所持金）を下の段に出す。持ち物を押すと、その中身のページ（今は白紙）を出す。
+// 記憶は発言のあとに変わるので、開くたびに /session_items で取り直す。
+// ============================================================
+const itemsOverlay = document.getElementById("itemsOverlay");
+const itemsPeople = document.getElementById("itemsPeople");
+const itemsBody = document.getElementById("itemsBody");
+let itemsCharacters = [];
+
+function closeItemsOverlay() {
+    itemsOverlay.classList.add("hidden");
+}
+
+async function toggleItemsOverlay() {
+    if (!itemsOverlay.classList.contains("hidden")) {
+        closeItemsOverlay();
+        return;
+    }
+
+    const sessionId = localStorage.getItem(STORAGE_KEYS.SELECTED_SESSION_ID) || "";
+    if (!sessionId) {
+        showToast("先にセッションを選んでください", MESSAGE_TYPE.INFO);
+        return;
+    }
+
+    try {
+        const result = await postJson(API_PATHS.SESSION_ITEMS, {
+            session_id: sessionId,
+        }, "持ち物の読み込みに失敗しました");
+        itemsCharacters = Array.isArray(result.characters) ? result.characters : [];
+    } catch (error) {
+        showToast(error.message || "持ち物の読み込みに失敗しました", MESSAGE_TYPE.ERROR);
+        return;
+    }
+
+    renderItemsPeople(itemsCharacters[0]?.character_id || "");
+    itemsOverlay.classList.remove("hidden");
+}
+
+// 上の段: メインキャラクターの一覧。押した人の持ち物を下の段に出す
+function renderItemsPeople(selectedId) {
+    itemsPeople.innerHTML = "";
+
+    for (const character of itemsCharacters) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "items-person";
+        button.classList.toggle("active", character.character_id === selectedId);
+        button.textContent = character.character_name || character.character_id;
+        button.addEventListener("click", () => renderItemsPeople(character.character_id));
+        itemsPeople.appendChild(button);
+    }
+
+    const selected = itemsCharacters.find(character => character.character_id === selectedId);
+    if (selected) {
+        renderItemsList(selected);
+    } else {
+        itemsBody.innerHTML = "";
+        appendText(itemsBody, "p", "持ち物を確認できるキャラクターがいません。", "items-empty");
+    }
+}
+
+// 下の段: その人の所持品（1つずつリンク）と所持金
+function renderItemsList(character) {
+    itemsBody.innerHTML = "";
+    appendText(itemsBody, "h3", `${character.character_name || character.character_id} の持ち物`);
+
+    const items = Array.isArray(character.items) ? character.items : [];
+    if (items.length === 0) {
+        appendText(itemsBody, "p", "持ち物はありません。", "items-empty");
+    } else {
+        const list = document.createElement("ul");
+        list.className = "items-list";
+        for (const item of items) {
+            const link = appendText(appendText(list, "li", ""), "a", item, "item-link");
+            link.href = "#";
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                renderItemSheet(character, item);
+            });
+        }
+        itemsBody.appendChild(list);
+    }
+
+    const money = (Array.isArray(character.money) ? character.money : [])
+        .map(entry => `${Number(entry.amount).toLocaleString("ja-JP")}${entry.unit || ""}`);
+    appendText(itemsBody, "p", `所持金: ${money.length ? money.join("、") : "なし"}`, "items-money");
+}
+
+// 持ち物の中身のページ。今は白紙（契約書・履歴書などの中身は、あとで入れる）
+function renderItemSheet(character, item) {
+    itemsBody.innerHTML = "";
+
+    const back = appendText(itemsBody, "a", "← 持ち物の一覧へ", "item-link");
+    back.href = "#";
+    back.addEventListener("click", (event) => {
+        event.preventDefault();
+        renderItemsList(character);
+    });
+
+    appendText(itemsBody, "h3", item);
+    appendText(itemsBody, "div", "", "item-sheet");
+}
+
+// 要素を作って parent に足し、作った要素を返す。文字は textContent で入れる
+function appendText(parent, tagName, text, className = "") {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    element.textContent = text;
+    parent.appendChild(element);
+    return element;
+}
+
+document.getElementById("itemsButton").addEventListener("click", toggleItemsOverlay);
+document.getElementById("closeItemsOverlay").addEventListener("click", closeItemsOverlay);
+
+// ============================================================
 // 初期記憶の進み具合
 // 新規チャットのあと、サーバーは裏で初期記憶（世界の記憶とキャラクターの記憶）を作る。
 // 発言のあとも、裏でキャラクターの記憶を更新する（after）。どちらも、
@@ -1442,6 +1561,7 @@ async function pollMemoryStatus(sessionId) {
 
 function resetMainView() {
     setCurrentPlayer(null);
+    closeItemsOverlay();
     stopMemoryWatch();
     setSendButtonsLocked(false);
     showMemoryProgress("hidden");

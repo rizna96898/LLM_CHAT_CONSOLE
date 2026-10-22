@@ -95,7 +95,7 @@
           <div class="bottom-tools">
             <button class="tool-button" type="button" id="newChatButton">新規チャット</button>
             <button class="tool-button primary" type="button" id="chatButton">発言</button>
-            <button class="tool-button" type="button">持ち物</button>
+            <button class="tool-button" type="button" id="itemsButton">持ち物</button>
             <button class="tool-button" type="button">ステータス</button>
             <span style="color: var(--muted);">ショートカット設定・クリア条件などは後で追加</span>
           </div>
@@ -114,6 +114,16 @@
             <div class="standee-box">
               発言キャラクター立ち絵
             </div>
+          </div>
+
+          <!-- 持ち物。「持ち物」ボタンで、立ち絵の上に重ねて開く。上: メインキャラクターの一覧、下: 押した人の持ち物 -->
+          <div class="items-overlay hidden" id="itemsOverlay">
+            <div class="items-header">
+              <strong>持ち物</strong>
+              <button class="mini-button" type="button" id="closeItemsOverlay">×</button>
+            </div>
+            <div class="items-people" id="itemsPeople"></div>
+            <div class="items-body" id="itemsBody"></div>
           </div>
         </section>
       </section>
