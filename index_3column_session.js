@@ -1937,8 +1937,34 @@ chatInput.addEventListener("keydown", (event) => {
             // Enterのみ送信
             event.preventDefault();
             document.getElementById("chatButton").click();
+            break;
+
+        case "p":
+        case "P":
+            // Ctrl+P で（ ）を入れる（入力欄にいるときは、ブラウザの印刷の代わりにする）
+            if (!event.ctrlKey || event.altKey || event.shiftKey) {
+                return;
+            }
+            event.preventDefault();
+            insertActionBrackets();
     }
 });
+
+// 入力欄に（）を入れる。セリフではない行動・思考・時間の経過を書くときに使う（モデルには、（ ）の中は行動として読ませている）。
+// 文字を選んでいれば、その文字を囲む。選んでいなければ、カーソルの位置に（）を入れて、かっこの中にカーソルを置く
+function insertActionBrackets() {
+    const start = chatInput.selectionStart;
+    const end = chatInput.selectionEnd;
+    const selected = chatInput.value.slice(start, end);
+
+    chatInput.setRangeText(`（${selected}）`, start, end, "end");
+    if (!selected) {
+        chatInput.setSelectionRange(start + 1, start + 1);
+    }
+    chatInput.focus();
+}
+
+document.getElementById("actionButton").addEventListener("click", insertActionBrackets);
 
 // 初期処理
 initializeMainViewFromLocalStorage();
