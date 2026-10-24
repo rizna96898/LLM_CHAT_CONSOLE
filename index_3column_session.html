@@ -53,18 +53,12 @@
     <section class="tag-manager-window hidden" id="tagManagerWindow">
       <div class="tag-manager-header"><strong>タグ管理</strong><button class="mini-button" type="button" id="closeTagManager">×</button></div>
       <div class="tag-manager-controls">
-        <input class="tag-register-input" type="text" placeholder="登録するタグ名" />
-        <button class="tag-add-button mini-button" type="button">登録</button>
-        <input class="tag-filter-input" type="text" placeholder="フィルター（入力したら下を絞り込み）" />
-        <div class="tag-manager-help">タグ名とアイコンを管理する画面。キャラ側では、この一覧から複数選択する想定。</div>
+        <input class="tag-register-input" id="tagRegisterInput" type="text" maxlength="30" placeholder="登録するタグ名" />
+        <button class="tag-add-button mini-button" type="button" id="tagAddButton">登録</button>
+        <input class="tag-filter-input" id="tagFilterInput" type="text" placeholder="フィルター（入力したら下を絞り込み）" />
+        <div class="tag-manager-help">タグ名を管理する画面。Enter でも登録できる。キャラ側では、この一覧から複数選択する想定。</div>
       </div>
-      <div class="tag-manager-body">
-        <div class="tag-master-row"><span class="tag-icon">女</span><strong>女子高生</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
-        <div class="tag-master-row"><span class="tag-icon">学</span><strong>学生</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
-        <div class="tag-master-row"><span class="tag-icon">医</span><strong>医療</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
-        <div class="tag-master-row"><span class="tag-icon">家</span><strong>白井家</strong><button class="mini-button" type="button">編集</button><button class="mini-button" type="button">削除</button></div>
-      </div>
-      <div class="tag-manager-footer"><button class="mini-button" type="button">登録／更新</button><button class="mini-button" type="button" id="closeTagManagerFooter">閉じる</button></div>
+      <div class="tag-manager-body" id="tagManagerBody"></div>
     </section>
 
     <main class="workspace" id="workspace">
