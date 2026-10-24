@@ -108,6 +108,20 @@
       </div>
     </div>
   </div>
+  <!-- タグ選び。「設定」で開き、タグ管理の一覧（tags/tags.yaml）から複数選ぶ -->
+  <div id="tagPickerOverlay" class="crop-overlay hidden">
+    <div class="crop-window tag-picker-window">
+      <div class="crop-header">
+        <strong>タグを選ぶ</strong>
+        <button type="button" id="tagPickerCancelTop">×</button>
+      </div>
+      <div class="tag-picker-body" id="tagPickerBody"></div>
+      <div class="crop-footer">
+        <button type="button" id="tagPickerCancel">キャンセル</button>
+        <button type="button" id="tagPickerApply">OK</button>
+      </div>
+    </div>
+  </div>
   <script src="js/constant.js"></script>
   <script src="js/common.js"></script>
   <script src="person_card.js"></script>

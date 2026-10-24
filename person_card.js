@@ -46,6 +46,7 @@ const standingPlaceholder = document.querySelector("#standingPreview .placeholde
 
 let cardList = [];
 let selectedId = null;
+let currentTags = [];   // 編集欄で付けているタグ。「登録／更新」で設定YAMLに保存する
 let selectedIconFile = null;
 let selectedStandingFile = null;
 
@@ -62,10 +63,6 @@ document.getElementById("settingLabel").textContent = `${CARD.noun}設定`;
 function loadCardList() {
     cardList = getStorageArray(CARD.listKey);
     cardList.sort((a, b) => String(a.id ?? "").localeCompare(String(b.id ?? "")));
-}
-
-function saveCardList() {
-    localStorage.setItem(CARD.listKey, JSON.stringify(cardList));
 }
 
 // 一覧をフォルダから取り直す。取れなければ、ブラウザに残っている一覧を使う
@@ -123,7 +120,7 @@ function clearEditor() {
     idInput.value = "";
     nameInput.value = "";
     settingInput.value = "";
-    tagList.innerHTML = "";
+    renderTags([]);
     clearImagePreview(iconImg, iconPlaceholder);
     clearImagePreview(standingImg, standingPlaceholder);
     selectedIconFile = null;
@@ -156,7 +153,7 @@ async function renderEditorFromServer(id) {
             id: data[`${CARD.field}_id`] ?? id,
             name: data[`${CARD.field}_name`] ?? "",
             setting: data[`${CARD.field}_info`] ?? "",
-            tags: item.tags ?? [],
+            tags: data.tags ?? [],
         });
     } catch (error) {
         renderEditor({ id, name: item.name ?? "", setting: "", tags: item.tags ?? [] });
@@ -164,12 +161,23 @@ async function renderEditorFromServer(id) {
     }
 }
 
+// 付けているタグを出す。タグごとの「×」で外せる（保存は「登録／更新」のとき）
 function renderTags(tags) {
+    currentTags = [...tags];
     tagList.innerHTML = "";
-    for (const tag of tags) {
+    for (const tag of currentTags) {
         const span = document.createElement("span");
         span.className = "tag-chip";
         span.textContent = tag;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "tag-chip-remove";
+        remove.textContent = "×";
+        remove.title = `「${tag}」を外す`;
+        remove.addEventListener("click", () => renderTags(currentTags.filter(name => name !== tag)));
+        span.appendChild(remove);
+
         tagList.appendChild(span);
     }
 }
@@ -227,6 +235,7 @@ document.getElementById("saveButton").addEventListener("click", async () => {
             [`${CARD.field}_id`]: saveId,
             [`${CARD.field}_name`]: saveName,
             content: settingInput.value,
+            tags: currentTags,
         }, `${CARD.noun}設定の保存に失敗しました。`);
         showToast(`${CARD.noun}を保存しました`, MESSAGE_TYPE.SUCCESS);
     } catch (error) {
@@ -273,13 +282,70 @@ document.getElementById("initializeButton").addEventListener("click", async () =
     }
 });
 
-document.getElementById("tagClearButton").addEventListener("click", () => {
-    const item = getSelectedCard();
-    if (!item) return;
-    item.tags = [];
-    saveCardList();
-    renderTags([]);
-});
+// 全削除: 付けているタグを全部外す（保存は「登録／更新」のとき）
+document.getElementById("tagClearButton").addEventListener("click", () => renderTags([]));
+
+// ============================================================
+// タグ選び
+// 「設定」で、タグ管理の一覧（tags/tags.yaml）をチェックボックスで並べ、付けているタグにはチェックを入れておく。
+// OK で編集欄のタグにする。タグ管理から消されたタグが付いていれば、そのまま残す
+// ============================================================
+
+const tagPickerOverlay = document.getElementById("tagPickerOverlay");
+const tagPickerBody = document.getElementById("tagPickerBody");
+
+async function openTagPicker() {
+    let masterTags = [];
+    try {
+        const result = await postJson(API_PATHS.LOAD_TAGS, {
+            base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+        }, "タグの読み込みに失敗しました");
+        masterTags = Array.isArray(result.tags) ? result.tags : [];
+    } catch (error) {
+        showToast(error.message || "タグの読み込みに失敗しました", MESSAGE_TYPE.ERROR);
+        return;
+    }
+
+    tagPickerBody.innerHTML = "";
+    for (const name of masterTags) {
+        const label = document.createElement("label");
+        label.className = "tag-picker-item";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = name;
+        checkbox.checked = currentTags.includes(name);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(name));
+        tagPickerBody.appendChild(label);
+    }
+    if (!masterTags.length) {
+        const empty = document.createElement("p");
+        empty.className = "tag-picker-empty";
+        empty.textContent = "タグがまだありません。メイン画面の「タグ」から登録してください。";
+        tagPickerBody.appendChild(empty);
+    }
+
+    tagPickerOverlay.dataset.master = JSON.stringify(masterTags);
+    tagPickerOverlay.classList.remove("hidden");
+}
+
+function closeTagPicker() {
+    tagPickerOverlay.classList.add("hidden");
+}
+
+function applyTagPicker() {
+    const masterTags = JSON.parse(tagPickerOverlay.dataset.master || "[]");
+    const checked = [...tagPickerBody.querySelectorAll("input[type=checkbox]:checked")].map(box => box.value);
+    // タグ管理に無いタグ（消されたもの）は、付いたまま残す
+    const kept = currentTags.filter(tag => !masterTags.includes(tag));
+    renderTags([...kept, ...checked]);
+    closeTagPicker();
+}
+
+document.getElementById("tagSettingButton").addEventListener("click", openTagPicker);
+document.getElementById("tagPickerApply").addEventListener("click", applyTagPicker);
+document.getElementById("tagPickerCancel").addEventListener("click", closeTagPicker);
+document.getElementById("tagPickerCancelTop").addEventListener("click", closeTagPicker);
 
 // ============================================================
 // 画像（アイコンと立ち絵）

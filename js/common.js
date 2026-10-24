@@ -137,7 +137,7 @@ function getToastContainer() {
 /**
  * 世界・キャラクター・プレイヤーの一覧を、サーバー（フォルダのYAML）から取り直して localStorage に書く。
  * 一覧を使う他の処理（世界画面の参照IDの確認など）は、今までどおり localStorage を読めばよい。
- * タグはブラウザにしか無いので、同じIDの項目から引き継ぐ。
+ * キャラクター・プレイヤーは、付けたタグ（設定YAMLの「タグ」）もサーバーから受け取る。
  * 取れなかったときは例外を投げる（localStorage は書き換えない）。
  *
  * @param {"world"|"character"|"player"} kind
@@ -155,11 +155,9 @@ async function refreshSettingsList(kind) {
     kind: kind,
   }, "一覧の取得に失敗しました");
 
-  const current = getStorageArray(storageKey);
   const items = (data.items || []).map(item => {
-    const old = current.find(c => c && c.id === item.id);
     const next = { id: item.id, name: item.name };
-    if (old && Array.isArray(old.tags)) next.tags = old.tags;
+    if (Array.isArray(item.tags)) next.tags = item.tags;
     return next;
   });
 
