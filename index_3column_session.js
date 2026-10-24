@@ -17,6 +17,7 @@ const settingsOverlay = document.getElementById('settingsOverlay');
 const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
 const openSettingsWindow = document.getElementById('openSettingsWindow');
 const characterFrame = document.querySelector('.character-frame');
+const playerFrame = document.querySelector('.player-frame');
 const worldFrame = document.querySelector('.world-frame');
 const playerOverlay = document.getElementById('playerOverlay');
 const closePlayerOverlay = document.getElementById('closePlayerOverlay');
@@ -67,7 +68,7 @@ characterToggleButton.addEventListener('click', () => { reloadCharacterFrame(); 
 closeCharacterOverlay.addEventListener('click', () => setOverlay(false, characterOverlay, 'character-open'));
 settingsToggleButton.addEventListener('click', () => setOverlay(settingsOverlay.classList.contains('hidden'), settingsOverlay, 'settings-open'));
 closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsOverlay, 'settings-open'));
-playerToggleButton.addEventListener('click', () => setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'));
+playerToggleButton.addEventListener('click', () => { reloadPlayerFrame(); setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'); });
 closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
 closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
 summaryCheck.addEventListener("click", checkServerHealth);
@@ -406,6 +407,12 @@ function setOverlay(open, overlay, className) {
 function reloadCharacterFrame() {
     if (!characterFrame) return;
     characterFrame.src = `person_card.html?kind=character&reload=${Date.now()}`;
+}
+
+// プレイヤー設定も、キャラクターカードと同じく、開くたびに読み直す（前の選択や入力を残さず、一覧をファイルから取り直す）
+function reloadPlayerFrame() {
+    if (!playerFrame) return;
+    playerFrame.src = `person_card.html?kind=player&reload=${Date.now()}`;
 }
 
 function reloadWorldFrame() {
