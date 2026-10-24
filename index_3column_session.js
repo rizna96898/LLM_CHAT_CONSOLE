@@ -13,7 +13,6 @@ const closeCharacterOverlay = document.getElementById('closeCharacterOverlay');
 const openCharacterWindow = document.getElementById('openCharacterWindow');
 const tagManagerWindow = document.getElementById('tagManagerWindow');
 const closeTagManager = document.getElementById('closeTagManager');
-const closeTagManagerFooter = document.getElementById('closeTagManagerFooter');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const closeSettingsOverlay = document.getElementById('closeSettingsOverlay');
 const openSettingsWindow = document.getElementById('openSettingsWindow');
@@ -52,7 +51,7 @@ openCharacterWindow.addEventListener('click', function () {openWindowPage('perso
 openSettingsWindow.addEventListener('click', function () {openWindowPage('settings.html', 'settingsWindow')});
 openPlayerWindow.addEventListener('click', function () {openWindowPage('person_card.html?kind=player', 'playerWindow')});
 
-tagManageButton.addEventListener('click', () => setOverlay(tagManagerWindow.classList.contains('hidden'), tagManagerWindow, 'tag-manager-open'));
+tagManageButton.addEventListener('click', toggleTagManager);
 toggleTop.addEventListener('click', () => setTopCollapsed(!topbar.classList.contains('collapsed')));
 topbar.addEventListener('mouseenter', () => { if (topbar.classList.contains('collapsed')) topbar.classList.add('menu-open'); });
 topbar.addEventListener('mouseleave', () => topbar.classList.remove('menu-open'));
@@ -71,7 +70,6 @@ closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsO
 playerToggleButton.addEventListener('click', () => setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'));
 closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
 closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
-closeTagManagerFooter.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
 summaryCheck.addEventListener("click", checkServerHealth);
 
 /**
@@ -1299,6 +1297,155 @@ async function openWorldSelectPopup() {
 function closeWorldSelect() {
     worldSelectPopup.classList.add("hidden");
 }
+
+// ============================================================
+// タグ
+// 上部の「タグ」で開く。タグの一覧は Web側フォルダの tags/tags.yaml にあり、開くたびに /settings/load_tags で読む。
+// 登録（一覧の最後に足す）・名前の変更・削除は、一覧を直してから /settings/save_tags で丸ごと保存する。
+// 保存に失敗したら、画面の一覧を保存前に戻す。フィルターは、入力した文字を含むタグだけを出す（保存はしない）
+// ============================================================
+const tagRegisterInput = document.getElementById("tagRegisterInput");
+const tagFilterInput = document.getElementById("tagFilterInput");
+const tagManagerBody = document.getElementById("tagManagerBody");
+let tagNames = [];
+let editingTagIndex = -1;
+
+async function toggleTagManager() {
+    const open = tagManagerWindow.classList.contains("hidden");
+    setOverlay(open, tagManagerWindow, "tag-manager-open");
+    if (!open) return;
+
+    editingTagIndex = -1;
+    tagRegisterInput.value = "";
+    tagFilterInput.value = "";
+    try {
+        const result = await postJson(API_PATHS.LOAD_TAGS, {
+            base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+        }, "タグの読み込みに失敗しました");
+        tagNames = Array.isArray(result.tags) ? result.tags : [];
+    } catch (error) {
+        tagNames = [];
+        showToast(error.message || "タグの読み込みに失敗しました", MESSAGE_TYPE.ERROR);
+    }
+    renderTagList();
+}
+
+// 一覧を直して保存する。失敗したら、画面の一覧を元に戻す。成功したら true
+async function saveTagNames(nextNames, successMessage) {
+    try {
+        const result = await postJson(API_PATHS.SAVE_TAGS, {
+            base_chat_path: localStorage.getItem(STORAGE_KEYS.BASE_CHAT_PATH) || "",
+            tags: nextNames,
+        }, "タグの保存に失敗しました");
+        tagNames = Array.isArray(result.tags) ? result.tags : nextNames;
+        showToast(successMessage, MESSAGE_TYPE.SUCCESS);
+        return true;
+    } catch (error) {
+        showToast(error.message || "タグの保存に失敗しました", MESSAGE_TYPE.ERROR);
+        return false;
+    } finally {
+        renderTagList();
+    }
+}
+
+// 同じ名前のタグがあれば、通知を出して true（except は、名前を変えている自分の位置）
+function isDuplicatedTag(name, except = -1) {
+    const duplicated = tagNames.some((tag, index) => tag === name && index !== except);
+    if (duplicated) {
+        showToast(`「${name}」は、もう登録されています`, MESSAGE_TYPE.ERROR);
+    }
+    return duplicated;
+}
+
+async function addTag() {
+    const name = tagRegisterInput.value.trim();
+    if (!name || isDuplicatedTag(name)) return;
+
+    if (await saveTagNames([...tagNames, name], `タグ「${name}」を登録しました`)) {
+        tagRegisterInput.value = "";
+    }
+}
+
+async function renameTag(index, newName) {
+    const name = newName.trim();
+    if (!name) {
+        showToast("タグ名が空です", MESSAGE_TYPE.ERROR);
+        return;
+    }
+    if (name === tagNames[index]) {
+        editingTagIndex = -1;
+        renderTagList();
+        return;
+    }
+    if (isDuplicatedTag(name, index)) return;
+
+    const nextNames = [...tagNames];
+    nextNames[index] = name;
+    editingTagIndex = -1;
+    await saveTagNames(nextNames, `タグを「${name}」に変えました`);
+}
+
+async function deleteTag(index) {
+    const name = tagNames[index];
+    if (!confirm(`タグ「${name}」を削除します。元に戻せません。よろしいですか？`)) return;
+
+    editingTagIndex = -1;
+    await saveTagNames(tagNames.filter((_, i) => i !== index), `タグ「${name}」を削除しました`);
+}
+
+// 一覧を出す。フィルターに入力があれば、その文字を含むタグだけ。編集中の行は、名前が入力欄になる
+function renderTagList() {
+    tagManagerBody.innerHTML = "";
+    const filter = tagFilterInput.value.trim();
+
+    tagNames.forEach((name, index) => {
+        if (filter && !name.includes(filter)) return;
+
+        const row = document.createElement("div");
+        row.className = "tag-master-row";
+        appendText(row, "span", name.slice(0, 1), "tag-icon");
+
+        if (index === editingTagIndex) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "tag-name-input";
+            input.maxLength = 30;
+            input.value = name;
+            input.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") renameTag(index, input.value);
+                if (event.key === "Escape") { editingTagIndex = -1; renderTagList(); }
+            });
+            row.appendChild(input);
+            appendTagButton(row, "保存", () => renameTag(index, input.value));
+            appendTagButton(row, "キャンセル", () => { editingTagIndex = -1; renderTagList(); });
+            tagManagerBody.appendChild(row);
+            input.focus();
+            input.select();
+            return;
+        }
+
+        appendText(row, "strong", name);
+        appendTagButton(row, "編集", () => { editingTagIndex = index; renderTagList(); });
+        appendTagButton(row, "削除", () => deleteTag(index));
+        tagManagerBody.appendChild(row);
+    });
+
+    if (!tagManagerBody.children.length) {
+        appendText(tagManagerBody, "p", filter ? "当てはまるタグはありません。" : "タグはまだありません。上の欄から登録できます。", "tag-empty");
+    }
+}
+
+function appendTagButton(row, label, onClick) {
+    const button = appendText(row, "button", label, "mini-button");
+    button.type = "button";
+    button.addEventListener("click", onClick);
+}
+
+document.getElementById("tagAddButton").addEventListener("click", addTag);
+tagRegisterInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") addTag();
+});
+tagFilterInput.addEventListener("input", renderTagList);
 
 // ============================================================
 // 持ち物

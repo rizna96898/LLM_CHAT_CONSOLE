@@ -53,6 +53,8 @@ const API_PATHS = {
   SELECTED_MESSAGE: "/selected_message",
   SESSION_STATUS: "/session_status",
   SESSION_ITEMS: "/session_items",
+  LOAD_TAGS: "/settings/load_tags",
+  SAVE_TAGS: "/settings/save_tags",
   SESSION_IMAGE: "/session_image",
   CHAT_STARTUP: "/chat_startup",
   NEW_CHAT: "/new_chat",
