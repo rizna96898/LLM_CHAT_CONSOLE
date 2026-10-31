@@ -156,7 +156,11 @@ async function saveWorldSetting() {
     hasError = true;
   }
 
-  if (hasError) return;
+  // 赤字は欄のそばにしか出ず、スクロールした下の欄だと見えないので、通知でも知らせる
+  if (hasError) {
+    showToast("入力に誤りがあります。赤字の欄を確認してください。", MESSAGE_TYPE.ERROR);
+    return;
+  }
 
   try {
     const data = await requestJson(API_PATHS.SAVE_WORLD_SETTING, {
@@ -343,6 +347,9 @@ function applyWorldSettings(data) {
     "startMessageInput",
     getWorldSettingValue(data, "start_message")
   );
+
+  // 登場人物の表も、読み込んだYAMLから作る（空のままだと、そのまま「登録／更新」できない）
+  reflectParticipantsFromYaml();
 }
 
 async function selectWorld(worldId) {
