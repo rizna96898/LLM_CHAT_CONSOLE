@@ -31,6 +31,7 @@ const settingsToggleButton = document.getElementById('settingsToggleButton');
 const playerToggleButton = document.getElementById('playerToggleButton');
 const summaryCheck = document.getElementById("summaryCheck");
 const summaryServerStatus = document.getElementById("summaryServerStatus");
+const summaryModelSelect = document.getElementById("summaryModelSelect");
 
 // メイン画面上のボタン
 const worldSelectButton = document.getElementById("worldSelectButton");
@@ -72,6 +73,7 @@ playerToggleButton.addEventListener('click', () => { reloadPlayerFrame(); setOve
 closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
 closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
 summaryCheck.addEventListener("click", checkServerHealth);
+summaryModelSelect.addEventListener("change", switchModel);
 
 /**
  * ラベル ON/OFF: ボタンの上の説明文字を出す・消す。選んだ状態はブラウザに覚えておく
@@ -1997,11 +1999,95 @@ function clearSelectedSession() {
     localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_NAME);
 }
 
-// 上部の「使用モデル」を出す。note はモデル名のうしろに付ける補足（未接続など）
+// 上部の「使用モデル」のプルダウンで、読み込み中のモデルの選択肢（value は models/ からの相対パス。一覧に無いモデルは ""）。
+// 選び直しをやめたときや、切り替えに失敗したときは、この選択肢に戻す
+let loadedModelValue = "";
+
+// 上部の「使用モデル」を出す。note はプルダウンのうしろに付ける補足（未接続など）
 function showModelName(modelName, note = "") {
+    selectModelOption(modelName);
     const llm = document.querySelector("#summaryLlm");
-    if (!llm) return;
-    llm.textContent = "使用モデル: " + (modelName || "未確認") + note;
+    if (llm) llm.textContent = note;
+}
+
+// プルダウンで、モデル名（ファイル名）に当たる選択肢を選ぶ。
+// 同じファイル名が別のフォルダにもあるときは、今の選択肢を優先する。一覧に無いときは、その名前だけの選択肢を足す
+function selectModelOption(modelName) {
+    const options = [...summaryModelSelect.options];
+    const fileName = (value) => value.split("/").pop();
+    let option = null;
+    if (modelName) {
+        option = options.find(o => o.value && o.value === loadedModelValue && fileName(o.value) === modelName)
+            || options.find(o => o.value && fileName(o.value) === modelName);
+    }
+
+    summaryModelSelect.querySelector("option[data-placeholder]")?.remove();
+    if (!option) {
+        option = createOption(modelName || "未確認", "");
+        option.dataset.placeholder = "1";
+        option.disabled = true;
+        summaryModelSelect.prepend(option);
+    }
+    option.selected = true;
+    loadedModelValue = option.value;
+}
+
+// プルダウンの選択肢を作る
+function createOption(text, value) {
+    const option = document.createElement("option");
+    option.textContent = text;
+    option.value = value;
+    return option;
+}
+
+// プルダウンを、読み込み中のモデルの選択肢に戻す
+function restoreModelSelect() {
+    const option = [...summaryModelSelect.options].find(o => o.value === loadedModelValue);
+    if (option) option.selected = true;
+}
+
+// プルダウンの中身を、サーバーの models/ の下にある .gguf で作り直す。選ぶのは呼び出し側（showModelName）。
+// 取れなかったら、今の中身のままにする
+async function loadModelList() {
+    try {
+        const result = await requestJson(API_PATHS.LIST_MODELS, { method: "GET" });
+        const placeholder = summaryModelSelect.querySelector("option[data-placeholder]");
+        summaryModelSelect.replaceChildren(...(placeholder ? [placeholder] : []),
+            ...(result.models || []).map(model => createOption(model, model)));
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// プルダウンで別のモデルを選んだ。確かめてから、そのモデルを読み込む（大きいモデルは数分かかる）
+async function switchModel() {
+    const model = summaryModelSelect.value;
+    if (!model || model === loadedModelValue) return;
+
+    if (!confirm(`${model} を読み込みます。\n数分かかることがあり、その間は返事を作れません。よろしいですか？`)) {
+        restoreModelSelect();
+        return;
+    }
+
+    summaryModelSelect.disabled = true;
+    const llm = document.querySelector("#summaryLlm");
+    if (llm) llm.textContent = "（読み込み中…）";
+
+    try {
+        const result = await postJson(API_PATHS.SWITCH_MODEL, { model });
+        loadedModelValue = model;
+        rememberModelName(result.model_name);
+        showToast(result.message || "モデルを読み込みました", MESSAGE_TYPE.SUCCESS);
+    } catch (error) {
+        console.error(error);
+        restoreModelSelect();
+        if (llm) llm.textContent = "";
+        showToast("モデルを切り替えられませんでした: " + (error.message || ""), MESSAGE_TYPE.ERROR);
+        // 読み込みに失敗すると、モデルが無い状態になることがある。今の様子を出し直す
+        await checkServerHealth();
+    } finally {
+        summaryModelSelect.disabled = false;
+    }
 }
 
 // 読み込み中のモデルを覚えて出す（接続確認・モデルロードで取れたとき）
@@ -2027,6 +2113,9 @@ async function checkServerHealth() {
         summaryServerStatus.textContent = "●接続中";
         summaryServerStatus.className = "status-ok";
         summaryServerStatus.title = "";
+
+        // プルダウンの中身（models/ の下のモデル）を取り直してから、読み込み中のモデルを選ぶ
+        await loadModelList();
 
         // 読み込み中のモデル。モデルサーバーが止まっている・読み込めていないときは、前に確かめた名前に補足を付ける
         const remembered = localStorage.getItem(STORAGE_KEYS.MODEL_NAME) || "";

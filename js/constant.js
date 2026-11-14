@@ -66,6 +66,8 @@ const API_PATHS = {
   SELECT_BASE_PATH: "/settings/select_base_path",
   OPEN_SYSTEM_YAML: "/settings/open_system_yaml",
   LOAD_MODEL: "/settings/load_model",
+  LIST_MODELS: "/settings/list_models",
+  SWITCH_MODEL: "/settings/switch_model",
 
   LOAD_IMAGE: "/settings/load_image",
   SAVE_IMAGE: "/settings/save_image",

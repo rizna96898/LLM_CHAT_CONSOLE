@@ -225,6 +225,18 @@ button, select, input, textarea { font: inherit; }
 }
 
 .system-summary strong { font-size: 14px; }
+
+/* 上部の「使用モデル」のプルダウン。選ぶとそのモデルを読み込む */
+.model-select {
+    max-width: 380px;
+    height: 24px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel-soft);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
 .system-base{ color: var(--text); }
 
 .top-control {
