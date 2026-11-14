@@ -31,6 +31,7 @@ const settingsToggleButton = document.getElementById('settingsToggleButton');
 const playerToggleButton = document.getElementById('playerToggleButton');
 const summaryCheck = document.getElementById("summaryCheck");
 const summaryServerStatus = document.getElementById("summaryServerStatus");
+const summaryModelSelect = document.getElementById("summaryModelSelect");
 
 // メイン画面上のボタン
 const worldSelectButton = document.getElementById("worldSelectButton");
@@ -71,7 +72,8 @@ closeSettingsOverlay.addEventListener('click', () => setOverlay(false, settingsO
 playerToggleButton.addEventListener('click', () => { reloadPlayerFrame(); setOverlay(playerOverlay.classList.contains('hidden'), playerOverlay, 'player-open'); });
 closePlayerOverlay.addEventListener('click', () => setOverlay(false, playerOverlay, 'player-open'));
 closeTagManager.addEventListener('click', () => setOverlay(false, tagManagerWindow, 'tag-manager-open'));
-summaryCheck.addEventListener("click", checkServerHealth);
+summaryCheck.addEventListener("click", () => checkServerHealth({ offerReload: true }));
+summaryModelSelect.addEventListener("change", switchModel);
 
 /**
  * ラベル ON/OFF: ボタンの上の説明文字を出す・消す。選んだ状態はブラウザに覚えておく
@@ -1997,11 +1999,124 @@ function clearSelectedSession() {
     localStorage.removeItem(STORAGE_KEYS.SELECTED_SESSION_NAME);
 }
 
-// 上部の「使用モデル」を出す。note はモデル名のうしろに付ける補足（未接続など）
-function showModelName(modelName, note = "") {
+// 上部の「使用モデル」のプルダウンで、読み込み中のモデルの選択肢（value は models/ からの相対パス。一覧に無いモデルは ""）。
+// 選び直しをやめたときや、切り替えに失敗したときは、この選択肢に戻す
+let loadedModelValue = "";
+
+// 「確認」で、モデルが読み込まれていなかったときに読み込むモデル（設定にあるモデル。/settings/list_models の current）
+let configuredModelValue = "";
+
+// 上部の「使用モデル」を出す（モデルの様子の補足は「サーバー：」の欄に出す）
+function showModelName(modelName) {
+    selectModelOption(modelName);
+    showModelNote("");
+}
+
+// プルダウンのうしろの補足（読み込み中…）
+function showModelNote(note) {
     const llm = document.querySelector("#summaryLlm");
     if (!llm) return;
-    llm.textContent = "使用モデル: " + (modelName || "未確認") + note;
+    llm.textContent = note;
+    llm.className = note ? "status-wait" : "system-base";
+}
+
+// モデルが読み込まれていない。プルダウンを「（読み込まれていません）」にして、どれを選んでも読み込めるようにする
+function showModelNotLoaded() {
+    selectModelOption("", "（読み込まれていません）");
+    showModelNote("");
+}
+
+// 「サーバー：」の欄。APサーバー・モデルサーバー・モデルのうち、いちばん悪い様子を出す
+function setServerStatus(text, className, title = "") {
+    summaryServerStatus.textContent = text;
+    summaryServerStatus.className = className;
+    summaryServerStatus.title = title;
+}
+
+// プルダウンで、モデル名（ファイル名）に当たる選択肢を選ぶ。
+// 同じファイル名が別のフォルダにもあるときは、今の選択肢を優先する。一覧に無いときは、その名前だけの選択肢を足す（名前が空なら emptyLabel）
+function selectModelOption(modelName, emptyLabel = "未確認") {
+    const options = [...summaryModelSelect.options];
+    const fileName = (value) => value.split("/").pop();
+    let option = null;
+    if (modelName) {
+        option = options.find(o => o.value && o.value === loadedModelValue && fileName(o.value) === modelName)
+            || options.find(o => o.value && fileName(o.value) === modelName);
+    }
+
+    summaryModelSelect.querySelector("option[data-placeholder]")?.remove();
+    if (!option) {
+        option = createOption(modelName || emptyLabel, "");
+        option.dataset.placeholder = "1";
+        option.disabled = true;
+        summaryModelSelect.prepend(option);
+    }
+    option.selected = true;
+    loadedModelValue = option.value;
+}
+
+// プルダウンの選択肢を作る
+function createOption(text, value) {
+    const option = document.createElement("option");
+    option.textContent = text;
+    option.value = value;
+    return option;
+}
+
+// プルダウンを、読み込み中のモデルの選択肢に戻す
+function restoreModelSelect() {
+    const option = [...summaryModelSelect.options].find(o => o.value === loadedModelValue);
+    if (option) option.selected = true;
+}
+
+// プルダウンの中身を、サーバーの models/ の下にある .gguf で作り直す。選ぶのは呼び出し側（showModelName）。
+// 取れなかったら、今の中身のままにする
+async function loadModelList() {
+    try {
+        const result = await requestJson(API_PATHS.LIST_MODELS, { method: "GET" });
+        configuredModelValue = result.current || "";
+        const placeholder = summaryModelSelect.querySelector("option[data-placeholder]");
+        summaryModelSelect.replaceChildren(...(placeholder ? [placeholder] : []),
+            ...(result.models || []).map(model => createOption(model, model)));
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// プルダウンで別のモデルを選んだ。確かめてから、そのモデルを読み込む（大きいモデルは数分かかる）
+async function switchModel() {
+    const model = summaryModelSelect.value;
+    if (!model || model === loadedModelValue) return;
+
+    if (!confirm(`${model} を読み込みます。\n数分かかることがあり、その間は返事を作れません。よろしいですか？`)) {
+        restoreModelSelect();
+        return;
+    }
+
+    await loadModel(model);
+}
+
+// モデルを読み込む（/settings/switch_model）。失敗したら、接続確認をし直して今の様子を出す
+async function loadModel(model) {
+    summaryModelSelect.disabled = true;
+    showModelNote("（読み込み中…）");
+
+    try {
+        const result = await postJson(API_PATHS.SWITCH_MODEL, { model });
+        loadedModelValue = model;
+        rememberModelName(result.model_name);
+        setServerStatus("●接続中", "status-ok");
+        showToast(result.message || "モデルを読み込みました", MESSAGE_TYPE.SUCCESS);
+    } catch (error) {
+        console.error(error);
+        restoreModelSelect();
+        showModelNote("");
+        showToast("モデルを切り替えられませんでした: " + (error.message || ""), MESSAGE_TYPE.ERROR);
+        // 読み込みに失敗すると、モデルが無い状態になることがある。今の様子を出し直す
+        await checkServerHealth();
+    } finally {
+        summaryModelSelect.disabled = false;
+    }
 }
 
 // 読み込み中のモデルを覚えて出す（接続確認・モデルロードで取れたとき）
@@ -2015,7 +2130,9 @@ function rememberModelName(modelName) {
     showModelName(modelName);
 }
 
-async function checkServerHealth() {
+// サーバーの接続確認。offerReload が true（「確認」を押したとき）で、モデルが読み込まれていなければ、
+// 設定にあるモデルを読み込むかを聞く（画面を開いたときや、読み込みに失敗した直後は聞かない）
+async function checkServerHealth({ offerReload = false } = {}) {
 
     summaryServerStatus.textContent = "確認中...";
     summaryServerStatus.className = "status-wait";
@@ -2024,18 +2141,25 @@ async function checkServerHealth() {
         // 正常（status: ok）なら接続中。それ以外は例外になり、下の catch で振り分ける
         const result = await requestJson(API_PATHS.HEALTH, { method: "GET" });
 
-        summaryServerStatus.textContent = "●接続中";
-        summaryServerStatus.className = "status-ok";
-        summaryServerStatus.title = "";
+        setServerStatus("●接続中", "status-ok");
+
+        // プルダウンの中身（models/ の下のモデル）を取り直してから、読み込み中のモデルを選ぶ
+        await loadModelList();
 
         // 読み込み中のモデル。モデルサーバーが止まっている・読み込めていないときは、前に確かめた名前に補足を付ける
         const remembered = localStorage.getItem(STORAGE_KEYS.MODEL_NAME) || "";
         if (result.model_server === "ok" && result.model_loaded && result.model_name) {
             rememberModelName(result.model_name);
         } else if (result.model_server === "ok") {
-            showModelName(remembered, "（モデルが読み込まれていません）");
+            setServerStatus("×モデル未読み込み", "status-error", "モデルサーバーは動いていますが、モデルが読み込まれていません。「確認」を押すと読み込めます");
+            showModelNotLoaded();
+            if (offerReload && configuredModelValue
+                && confirm(`モデルが読み込まれていません。\n${configuredModelValue} を読み込みますか？（数分かかることがあります）`)) {
+                await loadModel(configuredModelValue);
+            }
         } else if (result.model_server === "ng") {
-            showModelName(remembered, "（モデルサーバー未接続）");
+            setServerStatus("×モデルサーバー未接続", "status-error", "src/server.py が起動しているか確認してください");
+            showModelName(remembered);
         }
 
     } catch (error) {
