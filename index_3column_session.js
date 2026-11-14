@@ -2006,24 +2006,31 @@ let loadedModelValue = "";
 // 「確認」で、モデルが読み込まれていなかったときに読み込むモデル（設定にあるモデル。/settings/list_models の current）
 let configuredModelValue = "";
 
-// 上部の「使用モデル」を出す。note はプルダウンのうしろに付ける補足（未接続など。赤字）
-function showModelName(modelName, note = "") {
+// 上部の「使用モデル」を出す（モデルの様子の補足は「サーバー：」の欄に出す）
+function showModelName(modelName) {
     selectModelOption(modelName);
-    showModelNote(note);
+    showModelNote("");
 }
 
-// プルダウンのうしろの補足。className は文字の色（既定は赤字）
-function showModelNote(note, className = "status-error") {
+// プルダウンのうしろの補足（読み込み中…）
+function showModelNote(note) {
     const llm = document.querySelector("#summaryLlm");
     if (!llm) return;
     llm.textContent = note;
-    llm.className = note ? className : "system-base";
+    llm.className = note ? "status-wait" : "system-base";
 }
 
 // モデルが読み込まれていない。プルダウンを「（読み込まれていません）」にして、どれを選んでも読み込めるようにする
-function showModelNotLoaded(note) {
+function showModelNotLoaded() {
     selectModelOption("", "（読み込まれていません）");
-    showModelNote(note);
+    showModelNote("");
+}
+
+// 「サーバー：」の欄。APサーバー・モデルサーバー・モデルのうち、いちばん悪い様子を出す
+function setServerStatus(text, className, title = "") {
+    summaryServerStatus.textContent = text;
+    summaryServerStatus.className = className;
+    summaryServerStatus.title = title;
 }
 
 // プルダウンで、モデル名（ファイル名）に当たる選択肢を選ぶ。
@@ -2092,12 +2099,13 @@ async function switchModel() {
 // モデルを読み込む（/settings/switch_model）。失敗したら、接続確認をし直して今の様子を出す
 async function loadModel(model) {
     summaryModelSelect.disabled = true;
-    showModelNote("（読み込み中…）", "status-wait");
+    showModelNote("（読み込み中…）");
 
     try {
         const result = await postJson(API_PATHS.SWITCH_MODEL, { model });
         loadedModelValue = model;
         rememberModelName(result.model_name);
+        setServerStatus("●接続中", "status-ok");
         showToast(result.message || "モデルを読み込みました", MESSAGE_TYPE.SUCCESS);
     } catch (error) {
         console.error(error);
@@ -2133,9 +2141,7 @@ async function checkServerHealth({ offerReload = false } = {}) {
         // 正常（status: ok）なら接続中。それ以外は例外になり、下の catch で振り分ける
         const result = await requestJson(API_PATHS.HEALTH, { method: "GET" });
 
-        summaryServerStatus.textContent = "●接続中";
-        summaryServerStatus.className = "status-ok";
-        summaryServerStatus.title = "";
+        setServerStatus("●接続中", "status-ok");
 
         // プルダウンの中身（models/ の下のモデル）を取り直してから、読み込み中のモデルを選ぶ
         await loadModelList();
@@ -2145,13 +2151,15 @@ async function checkServerHealth({ offerReload = false } = {}) {
         if (result.model_server === "ok" && result.model_loaded && result.model_name) {
             rememberModelName(result.model_name);
         } else if (result.model_server === "ok") {
-            showModelNotLoaded("×モデル未読み込み");
+            setServerStatus("×モデル未読み込み", "status-error", "モデルサーバーは動いていますが、モデルが読み込まれていません。「確認」を押すと読み込めます");
+            showModelNotLoaded();
             if (offerReload && configuredModelValue
                 && confirm(`モデルが読み込まれていません。\n${configuredModelValue} を読み込みますか？（数分かかることがあります）`)) {
                 await loadModel(configuredModelValue);
             }
         } else if (result.model_server === "ng") {
-            showModelName(remembered, "×モデルサーバー未接続");
+            setServerStatus("×モデルサーバー未接続", "status-error", "src/server.py が起動しているか確認してください");
+            showModelName(remembered);
         }
 
     } catch (error) {
